@@ -389,11 +389,12 @@ h1 > span,
   max-width: 300px;
   line-height: 1.8;
 }
-.loading-star svg {
+.loading-star > svg {
   width: 35px;
   height: 45px;
   color: var(--lime);
-  animation: pulse 2s ease infinite;
+  transform-origin: center;
+  animation: loader-turn 2.4s ease-in-out infinite;
 }
 .pack-info,
 .card-info {
@@ -1087,11 +1088,12 @@ kbd {
   width: 15px;
   height: 15px;
 }
-@keyframes pulse {
-  50% {
-    opacity: 0.45;
-    transform: scale(0.9);
-  }
+@keyframes loader-turn {
+  0% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-star > svg { animation: none; }
 }
 @keyframes slidein {
   from {
