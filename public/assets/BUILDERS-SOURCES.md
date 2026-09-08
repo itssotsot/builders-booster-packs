@@ -85,3 +85,10 @@ Public X avatar resolver images: [markchen90.jpg](https://unavatar.io/twitter/ma
 - Background: https://astral.sh/blog/openai and https://astral.sh/about.
 - Portrait reference: https://github.com/charliermarsh.png.
 - Fictional attack: Astral Velocity (110). “Ruff out the bugs. Go full uv. Leave loading bars in the stardust.” Inspired by his high-performance Python tooling; not a quote from Charlie.
+
+## Victor E. Nunez — added 2026-09-08
+
+- Profile: https://x.com/victornunez — directly checked; bio says “codex at @OpenAI”, “notes from the frontier”, and includes basketball.
+- Portrait reference: https://pbs.twimg.com/profile_images/2097151540817485824/xXHiE143_400x400.jpg
+- Fictional attack: Context Assist (100). “Read the room. Queue the perfect pass. Ship the next move.” A playful combination of Codex context and basketball assists; not a quote from Victor.
+- Appended at stable person index 31; existing card identities are unchanged.

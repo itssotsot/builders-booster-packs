@@ -147,3 +147,7 @@ Use case: precise-object-edit. Edit the FIRST image, the existing portrait boost
 ## Charlie Marsh portrait
 
 Asset: `builders-charlie-marsh.png`, one square portrait, stable person index 30. Generated from Charlie's public GitHub portrait, with `builders-09.png` as the style reference. Prompt: preserve Charlie's recognizable face, swept short brown hair, friendly smile and navy crewneck sweater; centered chest-up illustration, fine-ink and textured gouache graphic-novel style, warm facial lighting, midnight indigo background with electric cyan/violet orbital trails, abstract developer-tool panels and stars; no card frame or lettering. All four finishes use the existing card shader.
+
+## Victor E. Nunez portrait
+
+Asset: `builders-victor-nunez.png`, square portrait, stable person index 31. Generated from his public X profile portrait with `builders-09.png` as style reference. Prompt: preserve recognizable facial structure, short wavy black hair, trimmed beard, warm medium skin, gentle expression, black jacket and shirt; centered chest-up fine-ink/textured painterly graphic-novel portrait with headroom. Dark emerald and amber Codex command room, abstract context windows and luminous basketball play diagram lines; no lettering or card frame. Uses the existing four finishes.

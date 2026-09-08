@@ -407,6 +407,19 @@ export const BUILDERS = [
     bio: "Builds Ruff, uv, and ty with the Astral team at OpenAI.",
     source: "https://github.com/charliermarsh",
   },
+  {
+    name: "Victor E. Nunez",
+    fullName: "Victor E. Nunez",
+    handle: "victornunez",
+    specialty: "Codex",
+    color: "#74d6ae",
+    hp: 170,
+    attack: "Context Assist",
+    power: 100,
+    text: "Read the room. Queue the perfect pass. Ship the next move.",
+    bio: "Works on Codex at OpenAI and shares notes from the frontier.",
+    source: "https://x.com/victornunez",
+  },
 ];
 export const FINISHES = [
   { name: "Standard", label: "STANDARD", color: "#b8beb0", symbol: "●" },
