@@ -9,6 +9,7 @@ export const PORTRAIT_SHEETS = [
   { file: "builders-07.png", start: 21, columns: 2, rows: 2 },
   { file: "builders-08.png", start: 25, columns: 2, rows: 2 },
   { file: "builders-09.png", start: 29, columns: 1, rows: 1 },
+  { file: "builders-charlie-marsh.png", start: 30, columns: 1, rows: 1 },
 ];
 
 export function portraitLocation(person) {

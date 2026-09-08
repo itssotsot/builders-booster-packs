@@ -393,7 +393,20 @@ export const BUILDERS = [
     "text": "Turn a promising prototype into a place you want to stay.",
     "bio": "Leads development of the Codex desktop app at OpenAI.",
     "source": "https://www.lennysnewsletter.com/p/openai-codex-lead-on-the-new-shape"
-  }
+  },
+  {
+    name: "Charlie Marsh",
+    fullName: "Charlie Marsh",
+    handle: "charliermarsh",
+    specialty: "Astral",
+    color: "#b6a0ff",
+    hp: 170,
+    attack: "Astral Velocity",
+    power: 110,
+    text: "Ruff out the bugs. Go full uv. Leave loading bars in the stardust.",
+    bio: "Builds Ruff, uv, and ty with the Astral team at OpenAI.",
+    source: "https://github.com/charliermarsh",
+  },
 ];
 export const FINISHES = [
   { name: "Standard", label: "STANDARD", color: "#b8beb0", symbol: "●" },

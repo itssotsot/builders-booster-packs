@@ -40,7 +40,7 @@ The server saves the balance, timer deadline, and collection. An opaque HttpOnly
 
 The browser uses an HttpOnly cookie to identify the player. There is no browser-storage collection import or migration flag. New sessions always start with an empty collection and three packs; existing sessions load their database records.
 
-30 publicly sourced OpenAI people, four finishes, and 120 collectible variants. Each five-card pack has five different people. Cards 1–4 have a 64% standard / 25% reverse holo / 10% holographic / 1% gold rare distribution. The last card is 99% holographic / 1% gold rare.
+31 publicly sourced OpenAI people, four finishes, and 124 collectible variants. Each five-card pack has five different people. Cards 1–4 have a 64% standard / 25% reverse holo / 10% holographic / 1% gold rare distribution. The last card is 99% holographic / 1% gold rare.
 
 Starting a tear requests a server-generated pack while the gesture continues. One atomic operation deducts the pack and grants all five cards immediately, including duplicates. Reveals and next-card transitions run entirely locally, with no network calls. If the server is unusually slow, the first card still waits for the pack response; subsequent reveals never wait for saving. Failed requests retry with the same receipt ID to avoid double charging.
 

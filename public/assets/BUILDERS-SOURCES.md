@@ -76,3 +76,12 @@ Public X avatar resolver images: [markchen90.jpg](https://unavatar.io/twitter/ma
 | ShibaniSan.jpg | [Personal site portrait](https://shibanisanturkar.com/shibani_photo.jpg) |
 | sherwinwu.png | [Sancus advisor portrait](https://static.wixstatic.com/media/550cec_117244c4fc3746d5bc6d26ed4de028b5~mv2.png/v1/fill/w_1080%2Ch_1080%2Cal_c/8.png), from [his public professional bio](https://www.sancus.vc/team/sherwin-wu) |
 | andrew-podcast.png | [Lenny's Podcast cover](https://substack-post-media.s3.amazonaws.com/public/images/af886eb1-afa0-4215-aca1-5c38d8ae46a1_2048x2048.png), from [the interview linked by Andrew's website](https://www.lennysnewsletter.com/p/openai-codex-lead-on-the-new-shape). Only his portrait was used for likeness; podcast lettering was excluded. |
+
+
+## Charlie Marsh — added 2026-09-08
+
+- Requested account: https://x.com/charliermarsh (direct fetch returned 403).
+- Identity and current work verified through his own profile: https://github.com/charliermarsh — OpenAI, Astral, Ruff, uv, and ty.
+- Background: https://astral.sh/blog/openai and https://astral.sh/about.
+- Portrait reference: https://github.com/charliermarsh.png.
+- Fictional attack: Astral Velocity (110). “Ruff out the bugs. Go full uv. Leave loading bars in the stardust.” Inspired by his high-performance Python tooling; not a quote from Charlie.

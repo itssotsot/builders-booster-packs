@@ -47,12 +47,12 @@ test("seed replay is deterministic; successive packs differ", () => {
   assert.deepEqual(first, makePack(b));
   assert.notDeepEqual(first, makePack(a));
 });
-test("ordinary packs preserve their original seeded sequence", () => {
+test("expanded roster has a reproducible seeded sequence", () => {
   assert.deepEqual(makePack(seededRandom(1)), [
-    { person: 18, finish: 0 },
+    { person: 19, finish: 0 },
     { person: 15, finish: 2 },
-    { person: 29, finish: 0 },
-    { person: 17, finish: 1 },
+    { person: 30, finish: 0 },
+    { person: 18, finish: 1 },
     { person: 11, finish: 3 },
   ]);
 });
@@ -63,7 +63,7 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
         "0-0": 2,
         "8-3": 1,
         "29-3": 1,
-        "30-0": 1,
+        "31-0": 1,
         "1-4": 3,
         "1-1": -2,
         "2-1": 1.5,
@@ -80,10 +80,11 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
 test("expansion preserves the original nine card identities and old saves", () => {
   const originalHandles = ["thsottiaux", "sama", "Dimillian", "gdb", "polynoamial", "romainhuet", "embirico", "nickaturley", "michpokrass"];
   assert.deepEqual(BUILDERS.slice(0, 9).map((b) => b.handle), originalHandles);
-  assert.equal(BUILDERS.length, 30);
-  assert.equal(COLLECTION_SIZE, 120);
+  assert.equal(BUILDERS.length, 31);
+  assert.equal(COLLECTION_SIZE, 124);
   assert.equal(BUILDERS[29].handle, "ajambrosino");
-  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 30);
+  assert.equal(BUILDERS[30].handle, "charliermarsh");
+  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 31);
   const oldSave = { cards: Object.fromEntries(originalHandles.map((_, person) => [`${person}-3`, person + 1])), packs: 17 };
   assert.deepEqual(cleanSave(oldSave), { ...oldSave, packAccess: cleanPackAccess() });
 });
@@ -98,5 +99,5 @@ test("every builder maps to a unique, existing portrait cell", () => {
     cells.add(`${p.sheetIndex}-${p.column}-${p.row}`);
   }
   assert.equal(cells.size, BUILDERS.length);
-  for (const invalid of [-1, 30, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
+  for (const invalid of [-1, 31, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
 });
