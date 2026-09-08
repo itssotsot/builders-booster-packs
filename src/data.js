@@ -409,7 +409,6 @@ export const FINISHES = [
 export const COLLECTION_SIZE = BUILDERS.length * FINISHES.length;
 export const FINAL_CARD_GOLD_PERCENT = 1;
 // Keep the original storage key so the app rename preserves existing collections.
-export const STORAGE_KEY = "rift.builders.collection.v1";
 export function seededRandom(seed) {
   let n = seed >>> 0;
   return () => {
@@ -463,19 +462,4 @@ export function cleanSave(input) {
     // Existing collections keep their lifetime totals and receive the new starter allowance.
     packAccess: cleanPackAccess(input?.packAccess),
   };
-}
-export function loadSave(storage) {
-  try {
-    return cleanSave(JSON.parse(storage.getItem(STORAGE_KEY)));
-  } catch {
-    return cleanSave(null);
-  }
-}
-export function saveCollection(storage, value) {
-  try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
 }

@@ -1,5 +1,3 @@
-import { loadSave } from './data.js';
-const IMPORT_KEY = 'booster.database-migration.v1';
 let clockOffset = 0;
 export const serverNow = () => Date.now() + clockOffset;
 
@@ -16,12 +14,9 @@ export async function request(action, body) {
 }
 export async function initializePlayer() {
   const initialize = async () => {
-    let legacy;
-    try { if (!localStorage.getItem(IMPORT_KEY)) legacy = loadSave(localStorage); } catch {}
-    await request('session', { legacy });
+    await request('session', {});
     // Confirm the browser retained the HttpOnly session cookie before accepting play.
     const data = await request('state');
-    try { localStorage.setItem(IMPORT_KEY, 'complete'); } catch {}
     return data;
   };
   return navigator.locks ? navigator.locks.request('booster-player-session', initialize) : initialize();

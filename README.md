@@ -38,7 +38,7 @@ Each anonymous player starts with **three free packs**. After the third pack, **
 
 The server saves the balance, timer deadline, and collection. An opaque HttpOnly cookie identifies the player automatically: there is no sign-in or recovery code. Returning in the same browser restores the collection and allowance. Clearing the cookie or using another browser creates a separate player and loses access to the previous save. The bonus does not prove a follow or prevent someone creating another anonymous player. `src/pack-access.js` contains the creator URL, allowance, and timer configuration.
 
-Existing local collections and allowances are imported once when this browser first connects to the database. This compatibility import is not an anti-cheat boundary. The original local save remains as a backup; subsequent gameplay uses the database. Failed saves stop the affected action and show an error rather than pretending progress was saved.
+The browser uses an HttpOnly cookie to identify the player. There is no browser-storage collection import or migration flag. New sessions always start with an empty collection and three packs; existing sessions load their database records.
 
 30 publicly sourced OpenAI people, four finishes, and 120 collectible variants. Each five-card pack has five different people. Cards 1–4 have a 64% standard / 25% reverse holo / 10% holographic / 1% gold rare distribution. The last card is 99% holographic / 1% gold rare.
 
@@ -58,7 +58,7 @@ The new portrait strips and wrapper were generated with the built-in image gener
 
 The current wrapper replaces the bottom-right portrait with Peter Steinberger, keeping Sam, Tibo, and the existing composition. The original wrapper is retained as `builders-pack.png`; the active image is `builders-pack-peter-v2.png`. The room's left side is clear of promotional copy, and the collection bar aligns with the bottom of the window.
 
-The expansion appends 21 people (including Andrew Ambrosino) while preserving the first nine card identities and existing saves. Fictional abilities and stats are marked as fan-edition game content. The legacy `rift.builders.collection.v1` collection is eligible for the one-time database import; the older `rift.collection.v1` data is never reinterpreted as people cards.
+The expansion appends 21 people (including Andrew Ambrosino) while preserving the first nine card identities and existing saves. Fictional abilities and stats are marked as fan-edition game content. Old browser-storage collections are no longer read or imported.
 
 ## Verification
 

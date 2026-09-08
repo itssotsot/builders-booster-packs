@@ -1,4 +1,4 @@
-import { GameError, initialState } from './game.js';
+import { GameError } from './game.js';
 import { readPlayer, createPlayer, operate } from './database.js';
 
 const YEAR = 60 * 60 * 24 * 365;
@@ -44,7 +44,7 @@ export async function handleApi(request, env, now = Date.now()) {
       if (!existing) {
         token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
         id = await digest(token);
-        await createPlayer(env.DB, id, initialState(body.legacy), now);
+        await createPlayer(env.DB, id, now);
       }
     } else if (!id) throw new GameError('Your browser session has expired. Refresh to continue.', 401);
     let action;

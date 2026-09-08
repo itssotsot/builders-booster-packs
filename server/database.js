@@ -4,18 +4,9 @@ import { BONUS_DELAY_MS } from '../src/pack-access.js';
 
 export const readPlayer = (db, id) => db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
 
-export async function createPlayer(db, id, { save }, now) {
-  // Expand validated legacy counts in SQL, without issuing a request per card.
-  await db.batch([
-    db.prepare('INSERT INTO users (id, packs, opened, bonus_started_at, bonus_claimed, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .bind(id, save.packs, save.packAccess.opened, null, Number(save.packAccess.bonusClaimed), now, now),
-    db.prepare(`WITH RECURSIVE copies(key, n, total) AS (
-      SELECT key, 1, value FROM json_each(?) WHERE value > 0
-      UNION ALL SELECT key, n + 1, total FROM copies WHERE n < total
-    ) INSERT INTO card (id, user_id, person, finish, acquired_at)
-    SELECT lower(hex(randomblob(16))), ?, CAST(substr(key,1,instr(key,'-')-1) AS INTEGER), CAST(substr(key,instr(key,'-')+1) AS INTEGER), ? FROM copies`)
-      .bind(JSON.stringify(save.cards), id, now),
-  ]);
+export async function createPlayer(db, id, now) {
+  await db.prepare('INSERT INTO users (id, created_at, updated_at) VALUES (?, ?, ?)')
+    .bind(id, now, now).run();
 }
 async function snapshot(db, id, now, pack = null) {
   // One statement provides a consistent view of the balance and owned cards.

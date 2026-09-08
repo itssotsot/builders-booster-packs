@@ -59,14 +59,14 @@ test('players have isolated collections; valid session reconnect preserves the s
   assert.equal((await call(DB, 'reveal', { packId: pack.id, index: 0 }, b.cookie)).status, 404);
 });
 
-test('legacy collection imports once; later reconnects cannot replace database data', async t => {
+test('session ignores client legacy cards and balances for new and existing users', async t => {
   const DB = fixture(t);
   const a = await player(DB, { cards: { '2-3': 7, bad: 9 }, packs: 20, packAccess: { opened: 2 } });
-  assert.deepEqual(a.data.save.cards, { '2-3': 7 });
-  assert.equal(packsRemaining(a.data.save.packAccess), 1);
+  assert.deepEqual(a.data.save.cards, {});
+  assert.equal(packsRemaining(a.data.save.packAccess), 3);
   const next = await call(DB, 'session', { legacy: { cards: { '1-1': 500 }, packs: 50 } }, a.cookie);
-  assert.deepEqual(next.data.save.cards, { '2-3': 7 });
-  assert.equal(next.data.save.packs, 20);
+  assert.deepEqual(next.data.save.cards, {});
+  assert.equal(next.data.save.packs, 0);
 });
 
 test('concurrent opens and retries consume one pack, and the fourth starter pack is refused', async t => {
@@ -116,7 +116,8 @@ test('failed card insertion rolls back both receipt and pack charge', async t =>
 
 test('bonus uses the server five-second deadline and is granted once even after repeated calls', async t => {
   const DB = fixture(t);
-  const a = await player(DB, { packAccess: { opened: 3 } });
+  const a = await player(DB);
+  for (let i=0; i<3; i++) await open(DB, a.cookie);
   const start = await call(DB, 'bonus', { now: 999999999, bonusClaimed: true }, a.cookie, 100000);
   assert.equal(start.data.save.packAccess.bonusStartedAt, 100000);
   assert.equal((await call(DB, 'state', undefined, a.cookie, 104999)).data.save.packAccess.bonusClaimed, false);

@@ -7,9 +7,6 @@ import {
   seededRandom,
   cleanSave,
   cardKey,
-  loadSave,
-  saveCollection,
-  STORAGE_KEY,
 } from "../src/data.js";
 import { cleanPackAccess } from "../src/pack-access.js";
 import { PORTRAIT_SHEETS, portraitLocation } from "../src/artwork.js";
@@ -80,54 +77,6 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
   );
   assert.deepEqual(cleanSave(null), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
 });
-test("collection survives save/load and corrupted or unavailable storage degrades safely", () => {
-  const memory = new Map();
-  const storage = {
-    getItem: (k) => memory.get(k),
-    setItem: (k, v) => memory.set(k, v),
-  };
-  const state = {
-    cards: { [cardKey({ person: 8, finish: 2 })]: 2 },
-    packs: 4,
-  };
-  assert.equal(saveCollection(storage, state), true);
-  assert.deepEqual(loadSave(storage), { ...state, packAccess: cleanPackAccess() });
-  memory.set(STORAGE_KEY, "broken json");
-  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
-  assert.equal(
-    saveCollection(
-      {
-        setItem() {
-          throw new Error("denied");
-        },
-      },
-      state,
-    ),
-    false,
-  );
-  assert.deepEqual(
-    loadSave({
-      getItem() {
-        throw new Error("denied");
-      },
-    }),
-    { cards: {}, packs: 0, packAccess: cleanPackAccess() },
-  );
-});
-
-test("Builders edition never reads or overwrites the original creature collection", () => {
-  const legacy = JSON.stringify({ cards: { "0-0": 7 }, packs: 12 });
-  const memory = new Map([["rift.collection.v1", legacy]]);
-  const storage = {
-    getItem: (key) => memory.get(key),
-    setItem: (key, value) => memory.set(key, value),
-  };
-  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
-  saveCollection(storage, { cards: { "1-3": 1 }, packs: 1 });
-  assert.equal(memory.get("rift.collection.v1"), legacy);
-  assert.deepEqual(loadSave(storage), { cards: { "1-3": 1 }, packs: 1, packAccess: cleanPackAccess() });
-});
-
 test("expansion preserves the original nine card identities and old saves", () => {
   const originalHandles = ["thsottiaux", "sama", "Dimillian", "gdb", "polynoamial", "romainhuet", "embirico", "nickaturley", "michpokrass"];
   assert.deepEqual(BUILDERS.slice(0, 9).map((b) => b.handle), originalHandles);

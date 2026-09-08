@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cleanSave, loadSave, saveCollection } from "../src/data.js";
+import { cleanSave } from "../src/data.js";
 import {
   cleanPackAccess, packsRemaining, spendPack, beginBonus,
   bonusSecondsRemaining, claimBonus, BONUS_DELAY_MS, CREATOR_X_URL,
@@ -34,18 +34,14 @@ test("the follow link awards exactly 1000 packs after five seconds, with no foll
   assert.equal(beginBonus(access, 70000), access, "claimed gifts cannot restart");
 });
 
-test("pending and claimed bonuses survive reloading without resetting the clock or balance", () => {
-  const memory = new Map();
-  const storage = { getItem: (k) => memory.get(k), setItem: (k, v) => memory.set(k, v) };
+test("pending and claimed bonuses preserve their clock and balance through serialization", () => {
   const save = cleanSave({ cards: { "0-3": 2 }, packs: 3, packAccess: { opened: 3 } });
   save.packAccess = beginBonus(save.packAccess, 1000);
-  saveCollection(storage, save);
-  let reloaded = loadSave(storage);
+  let reloaded = cleanSave(JSON.parse(JSON.stringify(save)));
   assert.equal(bonusSecondsRemaining(reloaded.packAccess, 3500), 3);
   reloaded.packAccess = claimBonus(reloaded.packAccess, 6000);
   reloaded.packAccess = spendPack(reloaded.packAccess);
-  saveCollection(storage, reloaded);
-  reloaded = loadSave(storage);
+  reloaded = cleanSave(JSON.parse(JSON.stringify(reloaded)));
   assert.equal(packsRemaining(reloaded.packAccess), 999);
   assert.equal(claimBonus(reloaded.packAccess, 90000), reloaded.packAccess);
   assert.deepEqual(reloaded.cards, { "0-3": 2 });
