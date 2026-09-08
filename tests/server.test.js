@@ -166,13 +166,18 @@ test('migration preserves users, duplicate cards, bonus and unshown cards in old
     lastPack:{id:'old-pack',cards:[{person:1,finish:0},{person:2,finish:2},{person:3,finish:0},{person:4,finish:1},{person:5,finish:3}],index:1,revealed:true,complete:false}};
   old.prepare('INSERT INTO players VALUES (?,?,?,?,?)').run('owner',JSON.stringify(state),8,100,200);
   old.close();
-  const DB=localDatabase(file);
-  t.after(()=>DB.close());
+  const migrated = new DatabaseSync(file);
+  migrated.exec(readFileSync('drizzle/0001_violet_runaways.sql','utf8'));
+  const DB = { prepare(sql) { let values=[]; return {bind(...args){values=args;return this;},async first(){return migrated.prepare(sql).get(...values);}}; } };
+  t.after(()=>migrated.close());
   return (async()=>{
     const user=await DB.prepare('SELECT * FROM users WHERE id = ?').bind('owner').first();
     assert.equal(user.packs,9); assert.equal(user.opened,4); assert.equal(user.bonus_claimed,1); assert.equal(user.created_at,100);
     assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM card').first()).n,7);
     assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM card WHERE person=1').first()).n,3);
     assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM card WHERE pack_id IS NOT NULL').first()).n,3);
+    migrated.exec(readFileSync('drizzle/0002_reset_collections.sql','utf8'));
+    for (const table of ['card','pack_openings','users']) assert.equal(migrated.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n,0);
+    assert.ok(migrated.prepare("SELECT name FROM sqlite_master WHERE name = 'users'").get());
   })();
 });
