@@ -135,3 +135,38 @@ The final compiled build was checked in a clean browser tab at 1280 × 720: one 
 - Removed the special Tibo/Dimillian/Andrew pack mode, guaranteed-person generator options, special-mode tests, and its README instructions. Normal person selection and rarity odds remain, including 1% final-slot Gold Rare.
 - The app normalizes old non-root preview URLs to `/`, retaining query parameters and the hash. No Sites configuration, source push, or deployment was performed.
 - Nine tests and the production build pass, including the ordinary seeded-sequence regression. An isolated browser visit to `/tibo-gold?seed=1` normalized to `/?seed=1`, loaded the app, and displayed 99% holographic / 1% Gold Rare in the final-slot odds. No browser warnings or errors. Closed the test tab and stopped the temporary server.
+
+
+## 2026-09-08 — Three starter packs and creator bonus
+
+- Automated: `npm run check` passed all 15 tests and the production build after the final source changes; `git diff --check` passed. The existing Three.js chunk-size warning remains.
+- Browser: played all three starter packs on the separate `http://127.0.0.1:5199/?seed=1` preview. Balance moved 3 → 2 → 1 → 0; all five cards in the third pack were revealed, and the summary inspection buttons remained available. Existing saved cards and lifetime pack counts were retained.
+- At zero, the next-pack button was replaced by one **Follow me on X** action. Reloading retained zero credit and showed the reward panel instead of a tearable pack; Enter did not open a fourth pack.
+- The follow action opened `https://x.com/itssotsot` in a new tab and immediately showed **Preparing your bonus… 5s** with a spinner. With no X sign-in or follow action, the app awarded 1,000 packs. Opening another pack reduced the balance to 999, which survived reload. No browser warnings or errors were captured.
+- Responsive: checked the reward summary at a 391 × 846 CSS-pixel viewport. Fixed the initial overlap with the footer; the reward panel now ends before the footer and there is no horizontal overflow. Restored the viewport afterward. Physical touch was not tested.
+- Unit coverage includes the five-second boundary, repeated clicks and callbacks, pending/claimed save restoration, old-save migration, exhausted credit, and malformed records. Pending reload timing is covered by tests; the browser reload check used the already-claimed reward.
+- The bonus is a once-per-browser timed gift, not follow verification. Clearing browser storage resets the allowance. No API, account, server balance, or additional deployment was added.
+
+
+## 2026-09-08 — Copy, card handoff, and inline bonus spinner
+
+- Replaced all mystery wording in app JavaScript, including the summary CTA (**Open more booster packs**), bonus heading, and empty finish state. The counter uses **1 pack left** and plural wording for other counts.
+- The next card interpolates from its stack position to z=0.85 during the outgoing-card animation (0.72 seconds normally, 0.18 with reduced motion). Browser screenshots captured an intermediate smaller back and the settled foreground back.
+- Played a full pack and confirmed the right information panel is hidden for backs 1–5 and visible only after reveal. Checked collection inspection and return while card 2 was face-down; the panel remained hidden.
+- Browser-confirmed **1 pack left** after opening the second starter pack and the renamed summary button.
+- The follow link now remains in place while waiting, replacing its visible label with a centered spinner. Before and during loading its rectangle was identical (210 × 49 CSS pixels). There is no separate visible loading message; countdown status remains available to assistive technology. The bonus still completed with exactly 1,000 packs.
+- `npm run check`: all 15 tests and production build passed. Browser console had no warnings/errors. No deployment or push performed.
+
+## 2026-09-08 — Anonymous database saves
+
+- Added an anonymous HttpOnly cookie session, a Sites D1 Worker API, and local SQLite persistence. No sign-in or recovery code. Existing browser collections and allowance import once; subsequent progress comes from the database.
+- Final `npm run check` passed all 23 tests and both client and Worker builds. Coverage includes player isolation, invalid identities, one-time import, ordered/idempotent reveals, concurrent pack spending, server-timed five-second bonus, and unfinished-pack persistence after closing and reopening SQLite.
+- HTTP smoke against the restarted local server at `http://localhost:5198` verified the root response, anonymous cookie creation, opening five cards, reveal persistence, advancement, and resumed state using a separate test player. Missing-cookie API requests return JSON 401 rather than the app HTML.
+- Sites packaging succeeded with client assets, Worker entrypoint, DB metadata, and generated migration. Imported the built Worker to verify its fetch export and asset forwarding. `git diff --check` passed. Existing Three.js size and Node experimental SQLite warnings remain.
+- No new browser interaction QA, source push, or hosted deployment was performed. The live site still needs a deployment to provision/apply the D1 migration. Clearing the player cookie loses access to that anonymous save; another browser creates a separate player.
+
+## 2026-09-08 — Drag to explore room
+
+- Background pointer drags move the independent room camera within bounded horizontal and vertical offsets. Release, cancellation, lost capture, window blur, and hidden-document events return the target to the original camera position. Reduced motion uses faster settling.
+- Pack/card hit targets and UI controls are excluded from room gestures. Removed passive hover parallax so the room returns to its original composition.
+- All 23 automated tests and the production build passed; diff whitespace validation passed. No browser interaction QA or deployment performed for this change.

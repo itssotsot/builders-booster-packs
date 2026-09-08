@@ -16,7 +16,7 @@ export class CozyRoom {
     this.camera.position.set(0, 3.1, 11.4);
     this.lookAt = new THREE.Vector3(0, 1.55, -4.5);
     this.camera.lookAt(this.lookAt);
-    this.cursor = new THREE.Vector2();
+    this.explore = new THREE.Vector2();
     this.steam = [];
     this.materials = new Map();
     this.boxGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -42,15 +42,7 @@ export class CozyRoom {
       .forEach((object) => (object.position.y += 0.72));
     this.neonSign();
     this.pendants();
-    window.addEventListener(
-      "pointermove",
-      (e) =>
-        this.cursor.set(
-          (e.clientX / innerWidth) * 2 - 1,
-          (e.clientY / innerHeight) * 2 - 1,
-        ),
-      { passive: true },
-    );
+
   }
   material(color, roughness = 0.8, metalness = 0) {
     const key = `${color}-${roughness}-${metalness}`;
@@ -735,14 +727,14 @@ export class CozyRoom {
     const parallax = reduced ? 0 : 1;
     this.camera.position.x = THREE.MathUtils.damp(
       this.camera.position.x,
-      this.cursor.x * 0.16 * parallax,
-      2,
+      -this.explore.x * 3.6,
+      reduced ? 18 : 7,
       dt,
     );
     this.camera.position.y = THREE.MathUtils.damp(
       this.camera.position.y,
-      3.1 - this.cursor.y * 0.065 * parallax,
-      2,
+      3.1 + this.explore.y * 1.6,
+      reduced ? 18 : 7,
       dt,
     );
     this.camera.position.z = this.baseZ || 11.4;

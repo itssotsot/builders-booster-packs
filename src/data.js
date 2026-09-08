@@ -1,3 +1,5 @@
+import { cleanPackAccess } from "./pack-access.js";
+
 // Public identities; classes, abilities and numbers are fictional game flavor.
 export const SERIES = "001";
 export const BUILDERS = [
@@ -458,6 +460,8 @@ export function cleanSave(input) {
     cards,
     packs:
       Number.isSafeInteger(input?.packs) && input.packs > 0 ? input.packs : 0,
+    // Existing collections keep their lifetime totals and receive the new starter allowance.
+    packAccess: cleanPackAccess(input?.packAccess),
   };
 }
 export function loadSave(storage) {

@@ -224,13 +224,14 @@ export class PackScene {
     mesh.userData.back = back;
     return mesh;
   }
-  reset() {
+  reset(locked = false) {
     if (this.pack) this.disposeGroup(this.pack);
     this.packCards.forEach((c) => this.disposeGroup(c));
     this.packCards = [];
     this.tweens = [];
     this.inspectCard = null;
-    this.mode = "sealed";
+    this.mode = locked ? "locked" : "sealed";
+    this.drag = null;
     this.progress = 0;
     this.tearDirection = 0;
     this.rotation = { x: 0, y: 0 };
@@ -243,9 +244,10 @@ export class PackScene {
     this.pack.add(this.back, this.front, this.strip);
     this.scene.add(this.pack);
     this.pack.rotation.set(0, 0, 0);
-    this.shadow.visible = true;
+    this.pack.visible = !locked;
+    this.shadow.visible = !locked;
     this.host.classList.remove("dragging");
-    this.host.classList.add("pack-grab");
+    this.host.classList.toggle("pack-grab", !locked);
     this.cb.onProgress?.(0);
   }
   disposeGroup(group) {
@@ -391,8 +393,41 @@ export class PackScene {
     el.addEventListener("pointerup", release);
     el.addEventListener("pointercancel", release);
     el.addEventListener("lostpointercapture", release);
+    // Background gestures bubble here after the pack/card has claimed its own drag.
+    let roomDrag = null;
+    const releaseRoom = () => {
+      if (!roomDrag) return;
+      const { target, id } = roomDrag;
+      roomDrag = null;
+      this.cozyRoom.explore.set(0, 0);
+      document.body.classList.remove("room-dragging");
+      if (target.hasPointerCapture(id)) target.releasePointerCapture(id);
+    };
+    document.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !e.isPrimary || this.drag || roomDrag) return;
+      if (!e.target.closest(".room") || e.target.closest("button, a, input, select, textarea, aside, dialog, #summary, #inspection, .bonus-panel")) return;
+      if (this.hit(e)) return;
+      roomDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
+      e.target.setPointerCapture(e.pointerId);
+      document.body.classList.add("room-dragging");
+      e.preventDefault();
+    });
+    document.addEventListener("pointermove", (e) => {
+      if (!roomDrag || e.pointerId !== roomDrag.id) return;
+      this.cozyRoom.explore.set(
+        clamp((e.clientX - roomDrag.x) / (innerWidth * 0.35), -1, 1),
+        clamp((e.clientY - roomDrag.y) / (innerHeight * 0.35), -1, 1),
+      );
+    });
+    for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) {
+      document.addEventListener(event, (e) => {
+        if (roomDrag && e.pointerId === roomDrag.id) releaseRoom();
+      });
+    }
+    window.addEventListener("blur", releaseRoom);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
+        releaseRoom();
         this.drag = null;
         this.rotation = { x: 0, y: 0 };
         this.host.classList.remove("dragging");
@@ -557,6 +592,22 @@ export class PackScene {
       },
     );
   }
+  restore(cards, index, revealed) {
+    this.reset(true);
+    this.index = index;
+    this.packCards = cards.map((card, i) => {
+      const g = this.createCard(card);
+      g.position.set(i === index ? 0 : i * 0.025, i === index ? 0 : -i * 0.025, i === index ? 0.85 : -1.25 - i * 0.05);
+      g.rotation.y = i === index && revealed ? 0 : Math.PI;
+      g.visible = i >= index;
+      return g;
+    });
+    this.mode = revealed ? "front" : "back";
+    this.flip = revealed ? 0 : Math.PI;
+    this.shadow.visible = true;
+    this.cb.onReady?.(index);
+    if (revealed) this.cb.onRevealed?.(index);
+  }
   reveal() {
     if (this.mode !== "back") return;
     this.mode = "flipping";
@@ -585,13 +636,25 @@ export class PackScene {
     this.rotation = { x: 0, y: 0 };
     const old = this.packCards[this.index];
     const y = old.position.y;
+    const next = this.packCards[this.index + 1];
+    const nextStart = next?.position.clone();
     this.sound.slide();
     this.tween(
-      this.reduced ? 0.18 : 0.48,
+      this.reduced ? 0.18 : 0.72,
       (t) => {
-        old.position.x = -ease(t) * 7;
-        old.position.y = y - t * 0.45;
-        old.rotation.z = t * 0.4;
+        const outgoing = clamp(t / 0.65, 0, 1);
+        old.position.x = -ease(outgoing) * 7;
+        old.position.y = y - outgoing * 0.45;
+        old.rotation.z = outgoing * 0.4;
+        if (next) {
+          // Bring the next back forward continuously as the revealed card leaves.
+          const incoming = clamp((t - 0.18) / 0.82, 0, 1);
+          next.position.set(
+            smooth(nextStart.x, 0, incoming),
+            smooth(nextStart.y, 0, incoming),
+            smooth(nextStart.z, 0.85, incoming),
+          );
+        }
       },
       () => {
         old.visible = false;
@@ -636,7 +699,7 @@ export class PackScene {
       (g, i) =>
         (g.visible = i >= this.index && ["back", "front"].includes(this.mode)),
     );
-    this.shadow.visible = this.mode !== "summary";
+    this.shadow.visible = !["summary", "locked"].includes(this.mode);
     this.flip = this.mode === "back" ? Math.PI : 0;
   }
   flipInspection() {

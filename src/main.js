@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Volume2,
   VolumeX,
-  HelpCircle,
   X,
   Layers,
   Rotate3d,
@@ -28,18 +27,22 @@ import {
   FINISHES,
   FINAL_CARD_GOLD_PERCENT,
   COLLECTION_SIZE,
-  makePack,
-  seededRandom,
   cardKey,
-  loadSave,
-  saveCollection,
+  cleanSave,
 } from "./data";
+import {
+  BONUS_PACKS,
+  CREATOR_X_URL,
+  packsRemaining,
+  bonusSecondsRemaining,
+} from "./pack-access";
+import { initializePlayer, request, serverNow } from "./api.js";
+
 const icons = {
   ArrowUpRight,
   ArrowRight,
   Volume2,
   VolumeX,
-  HelpCircle,
   X,
   Layers,
   Rotate3d,
@@ -53,12 +56,10 @@ const icons = {
 };
 const $ = (s) => document.querySelector(s);
 const sound = new Sound();
-let save;
-try {
-  save = loadSave(localStorage);
-} catch {
-  save = { cards: {}, packs: 0 };
-}
+let save = cleanSave(null);
+let activePack = null;
+let currentPackId = null;
+let networkBusy = false;
 let scene,
   textures,
   pack = [],
@@ -72,15 +73,11 @@ let scene,
 if (location.pathname !== "/") {
   history.replaceState(null, "", `/${location.search}${location.hash}`);
 }
-const query = new URLSearchParams(location.search);
-const random = query.has("seed")
-  ? seededRandom(Number(query.get("seed")))
-  : Math.random;
 $("#app").innerHTML = `
   <header class="header">
     <a class="brand" href="/" aria-label="OpenAI Booster Packs Collector Simulator home">${brandMark}<span class="brand-lockup"><span class="brand-name">OpenAI Booster Packs</span><span class="brand-subtitle">Collector Simulator</span></span></a>
     <nav aria-label="Main navigation"><button class="nav-link active" id="room-nav">Pack room<span class="nav-dot"></span></button><button class="nav-link" id="collection-nav">Collection <span class="count-badge" id="nav-count">0</span></button></nav>
-    <div class="header-tools"><button id="sound" class="sound-button" aria-label="Sound on" aria-pressed="true"><i data-lucide="volume-2"></i><span>Sound on</span></button><span class="tool-divider"></span><button class="icon-button" id="help" aria-label="How to play"><i data-lucide="help-circle"></i></button></div>
+    <div class="header-tools"><button id="sound" class="sound-button" aria-label="Sound on" aria-pressed="true"><i data-lucide="volume-2"></i><span>Sound on</span></button></div>
   </header>
   <main>
     <section class="room" aria-label="Pack opening room">
@@ -96,34 +93,131 @@ $("#app").innerHTML = `
       <div class="stage-bottom" id="stage-bottom" hidden><div class="tear-meter" id="tear-meter" hidden><span></span></div><div class="card-progress" id="card-progress" hidden></div></div>
       <div class="summary" id="summary" hidden></div>
     </section>
-    <footer class="footer"><div class="collection-stats"><span class="mini-stack"><i data-lucide="layers"></i></span><div><b id="footer-count">0 <span>/ ${COLLECTION_SIZE}</span></b><span class="stats-label">unique cards collected</span></div><div class="footer-divider"></div><div><b id="packs-count">0</b><span class="stats-label">packs opened</span></div></div></footer>
+    <footer class="footer"><div class="collection-stats"><span class="mini-stack"><i data-lucide="layers"></i></span><div><b id="footer-count">0 <span>/ ${COLLECTION_SIZE}</span></b><span class="stats-label">unique cards collected</span></div><div class="footer-divider"></div><div><b id="packs-count">0</b><span class="stats-label">packs opened</span></div></div><div class="pack-balance" role="status"><b id="packs-remaining">3</b><span id="packs-left-label">packs left</span></div></footer>
   </main>
   <dialog id="collection-dialog" class="collection-dialog"><div class="dialog-head"><div><div class="eyebrow">YOUR BUILDERS COLLECTION</div><h2>The collection<span>.</span></h2></div><button class="icon-button close-dialog" aria-label="Close collection"><i data-lucide="x"></i></button></div><div class="collection-toolbar"><p id="collection-description"></p><div class="filter-tabs" aria-label="Filter by finish">${["All cards", ...FINISHES.map((f) => f.name)].map((f, i) => `<button data-filter="${i === 0 ? "all" : i - 1}" class="filter ${i === 0 ? "active" : ""}" aria-pressed="${i === 0}">${f}</button>`).join("")}</div></div><div class="collection-grid" id="collection-grid"></div></dialog>
-  <dialog id="help-dialog" class="help-dialog"><div class="dialog-head"><div><div class="eyebrow">THE JOY IS IN THE OPENING</div><h2>A small ritual<span>.</span></h2></div><button class="icon-button close-dialog" aria-label="Close guide"><i data-lucide="x"></i></button></div><div class="guide-steps"><div><span>01</span><div><h3>Grab near the top.</h3><p>Grab anywhere near the top of the pack and pull left or right. Feel it crinkle, watch it curl. Let go anytime and pick up where you left off.</p></div><i data-lucide="move-horizontal"></i></div><div><span>02</span><div><h3>Take your time.</h3><p>Tap the card to flip it. Drag to tilt it into the light, then tap again for the next card. Your holo is waiting.</p></div><i data-lucide="rotate-3d"></i></div><div><span>03</span><div><h3>Keep the good ones. All of them.</h3><p>Every card you reveal is saved on this browser. Open your collection to inspect it again, in every glorious finish.</p></div><i data-lucide="layers"></i></div></div><div class="odds-panel"><div class="eyebrow">THE POSSIBILITIES</div><p>Cards 1–4: 64% standard · 25% reverse holo · 10% holographic · 1% gold rare. <br>Card 5: ${100 - FINAL_CARD_GOLD_PERCENT}% holographic · ${FINAL_CARD_GOLD_PERCENT}% gold rare. Five different builders in every pack.</p></div><div class="keyboard-note"><span>Keyboard friendly</span><p><kbd>Enter</kbd> / <kbd>Space</kbd> Open, flip & next &nbsp; <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> Tilt &nbsp; <kbd>M</kbd> Sound</p></div><button class="primary-button" id="start-guide">Let’s find something good<i data-lucide="arrow-right"></i></button></dialog>
+  <dialog id="help-dialog" class="help-dialog"><div class="dialog-head"><div><div class="eyebrow">THE JOY IS IN THE OPENING</div><h2>A small ritual<span>.</span></h2></div><button class="icon-button close-dialog" aria-label="Close guide"><i data-lucide="x"></i></button></div><div class="guide-steps"><div><span>01</span><div><h3>Grab near the top.</h3><p>Grab anywhere near the top of the pack and pull left or right. Feel it crinkle, watch it curl. Let go anytime and pick up where you left off.</p></div><i data-lucide="move-horizontal"></i></div><div><span>02</span><div><h3>Take your time.</h3><p>Tap the card to flip it. Drag to tilt it into the light, then tap again for the next card. Your holo is waiting.</p></div><i data-lucide="rotate-3d"></i></div><div><span>03</span><div><h3>Keep the good ones. All of them.</h3><p>Every card you reveal is saved to your collection. Open your collection to inspect it again, in every glorious finish.</p></div><i data-lucide="layers"></i></div></div><div class="odds-panel"><div class="eyebrow">THE POSSIBILITIES</div><p>Cards 1–4: 64% standard · 25% reverse holo · 10% holographic · 1% gold rare. <br>Card 5: ${100 - FINAL_CARD_GOLD_PERCENT}% holographic · ${FINAL_CARD_GOLD_PERCENT}% gold rare. Five different builders in every pack.</p></div><div class="keyboard-note"><span>Keyboard friendly</span><p><kbd>Enter</kbd> / <kbd>Space</kbd> Open, flip & next &nbsp; <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> Tilt &nbsp; <kbd>M</kbd> Sound</p></div><button class="primary-button" id="start-guide">Let’s find something good<i data-lucide="arrow-right"></i></button></dialog>
   <dialog id="builders-dialog" class="collection-dialog builders-dialog"><div class="dialog-head"><div><div class="eyebrow">OPENAI · FAN EDITION · SERIES ${SERIES}</div><h2>Meet the builders<span>.</span></h2></div><button class="icon-button close-dialog" aria-label="Close builders"><i data-lucide="x"></i></button></div><p class="roster-note">${BUILDERS.length} real people. Four collectible finishes. Abilities and stats are playful fiction.</p><div class="builder-search-bar"><input id="builder-search" type="search" placeholder="Search a name or @handle" aria-label="Find a builder" autocomplete="off"><span id="builder-results" role="status"></span></div><div id="builders-grid" class="builders-grid"></div></dialog>
   <div class="toast" id="toast" role="status"></div><div id="announcer" class="sr-only" aria-live="polite"></div>`;
+const bonusPanel = document.createElement("section");
+bonusPanel.id = "bonus-panel";
+bonusPanel.className = "bonus-panel";
+bonusPanel.hidden = true;
+bonusPanel.setAttribute("aria-labelledby", "bonus-title");
+bonusPanel.innerHTML = `<div class="bonus-kicker">A LITTLE THANK-YOU</div><h2 id="bonus-title">1,000 extra booster packs.</h2><p id="bonus-copy">Keep collecting. Follow me on X for 1,000 extra booster packs.</p><a id="follow-bonus" class="primary-button" href="${CREATOR_X_URL}" target="_blank" rel="noopener noreferrer"><span id="follow-bonus-label">Follow me on X</span><span id="follow-bonus-spinner" class="bonus-spinner" aria-hidden="true" hidden></span><span id="bonus-status" class="sr-only" role="status"></span></a><button id="bonus-continue" class="primary-button" hidden>Open a pack</button><p id="bonus-note" class="bonus-note">Already following? This bonus is for you too.</p>`;
+$(".room").append(bonusPanel);
+
+// The server owns the timer and balance; the UI only displays its countdown.
+let bonusTimer;
+let bonusStarting = false;
+let bonusPolling = false;
+function acceptState(data) {
+  save = data.save;
+  activePack = data.activePack;
+  updateCounts();
+}
+function renderBonus() {
+  const remaining = packsRemaining(save.packAccess);
+  const atSummary = phase === "summary";
+  const show = phase === "locked" || (atSummary && remaining === 0);
+  const parent = atSummary ? $("#summary") : $(".room");
+  if (bonusPanel.parentElement !== parent) {
+    if (atSummary) parent.insertBefore(bonusPanel, $("#view-all"));
+    else parent.append(bonusPanel);
+  }
+  bonusPanel.classList.toggle("bonus-in-summary", atSummary);
+  bonusPanel.hidden = !show || inspecting;
+  const next = $("#another-pack");
+  if (next) next.hidden = remaining === 0;
+  const pending = bonusStarting || (save.packAccess.bonusStartedAt !== null && !save.packAccess.bonusClaimed);
+  $("#follow-bonus").hidden = save.packAccess.bonusClaimed;
+  $("#follow-bonus").setAttribute("aria-disabled", String(pending));
+  $("#follow-bonus").setAttribute("aria-busy", String(pending));
+  $("#follow-bonus").setAttribute("aria-label", pending ? "Preparing your bonus" : "Follow me on X");
+  $("#follow-bonus-label").hidden = pending;
+  $("#follow-bonus-spinner").hidden = !pending;
+  $("#bonus-continue").hidden = !save.packAccess.bonusClaimed;
+  bonusPanel.setAttribute("aria-busy", String(pending));
+  if (save.packAccess.bonusClaimed) {
+    $("#bonus-title").textContent = remaining ? "1,000 packs. All yours." : "What a collection.";
+    $("#bonus-copy").textContent = remaining ? "Your bonus is ready. Let’s see what’s inside." : "You’ve opened all 1,003 packs. Explore every card you’ve collected.";
+    $("#bonus-continue").textContent = remaining ? "Open a pack" : "Explore your collection";
+    $("#bonus-note").textContent = "Your cards are saved to your collection.";
+  } else {
+    $("#bonus-title").textContent = "1,000 extra booster packs.";
+    $("#bonus-copy").textContent = "Keep collecting. Follow me on X for 1,000 extra booster packs.";
+    $("#bonus-note").textContent = "Already following? This bonus is for you too.";
+  }
+  if (pending) {
+    const label = `Preparing your bonus… ${bonusSecondsRemaining(save.packAccess, serverNow())}s`;
+    if ($("#bonus-status").textContent !== label) $("#bonus-status").textContent = label;
+  }
+}
+async function updateBonusTimer() {
+  renderBonus();
+  if (save.packAccess.bonusClaimed || save.packAccess.bonusStartedAt === null) {
+    clearInterval(bonusTimer);
+    bonusTimer = undefined;
+    return;
+  }
+  if (!bonusTimer) bonusTimer = setInterval(updateBonusTimer, 500);
+  if (bonusPolling || bonusSecondsRemaining(save.packAccess, serverNow()) > 0) return;
+  bonusPolling = true;
+  try {
+    acceptState(await request('state'));
+    if (save.packAccess.bonusClaimed) {
+      clearInterval(bonusTimer);
+      bonusTimer = undefined;
+      sound.tick();
+      toast(`${BONUS_PACKS.toLocaleString('en-US')} booster packs added. Enjoy your next discoveries!`);
+    }
+    renderBonus();
+  } catch (error) {
+    clearInterval(bonusTimer);
+    bonusTimer = undefined;
+    toast(error.message + ' Return to the pack room to retry.');
+  } finally { bonusPolling = false; }
+}
+$("#follow-bonus").addEventListener("click", async (event) => {
+  if (bonusStarting || save.packAccess.bonusClaimed || save.packAccess.bonusStartedAt !== null) {
+    event.preventDefault();
+    if (!bonusStarting) updateBonusTimer();
+    return;
+  }
+  bonusStarting = true;
+  renderBonus();
+  try {
+    acceptState(await request('bonus', {}));
+  } catch (error) { toast(error.message); }
+  finally { bonusStarting = false; renderBonus(); updateBonusTimer(); }
+});
+$("#bonus-continue").onclick = () => packsRemaining(save.packAccess) ? reset() : openCollection();
+async function syncGame() {
+  if (!scene || networkBusy || !['sealed', 'locked', 'front', 'back', 'summary'].includes(phase) || inspecting) return;
+  try {
+    acceptState(await request('state'));
+    if (activePack && (activePack.id !== currentPackId || activePack.index !== index
+      || activePack.revealed !== (phase === 'front'))) restoreActivePack();
+    else if (!activePack && ['front', 'back'].includes(phase)) resetView();
+    else if (['sealed', 'locked'].includes(phase)) resetView();
+    updateBonusTimer();
+  } catch (error) { toast(error.message); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncGame(); });
 function refreshIcons() {
   createIcons({ icons, attrs: { "stroke-width": 1.6 } });
 }
 function announce(text) {
   $("#announcer").textContent = text;
 }
-function persist() {
-  let ok = false;
-  try {
-    ok = saveCollection(localStorage, save);
-  } catch {}
-  if (!ok)
-    toast(
-      "Browser storage is unavailable. Your collection will last for this session.",
-    );
-  updateCounts();
-}
 function updateCounts() {
   const unique = Object.keys(save.cards).length;
   $("#nav-count").textContent = unique;
   $("#footer-count").innerHTML = `${unique} <span>/ ${COLLECTION_SIZE}</span>`;
   $("#packs-count").textContent = save.packs;
+  const remaining = packsRemaining(save.packAccess);
+  $("#packs-remaining").textContent = remaining.toLocaleString("en-US");
+  $("#packs-left-label").textContent = remaining === 1 ? "pack left" : "packs left";
 }
 let toastTimeout;
 function toast(text) {
@@ -145,20 +239,27 @@ function onTearStart() {
     announce("Tearing the pack. Keep dragging across the seal.");
   }
 }
-function onOpen() {
-  phase = "opening";
-  pack = makePack(random);
-  save.packs++;
-  persist();
-  $("#seal-hint").hidden = true;
-  $("#tear-meter").hidden = true;
-  scene.open(pack);
+async function onOpen() {
+  if (!['sealed', 'tearing'].includes(phase) || networkBusy) return;
+  phase = 'opening';
+  networkBusy = true;
+  try {
+    acceptState(await request('open', { requestId: crypto.randomUUID() }));
+    if (!activePack) { resetView(); return; }
+    pack = activePack.cards;
+    currentPackId = activePack.id;
+    $('#seal-hint').hidden = true;
+    $('#tear-meter').hidden = true;
+    if (activePack.index || activePack.revealed) restoreActivePack();
+    else scene.open(pack);
+  } catch (error) { resetView(); toast(error.message); }
+  finally { networkBusy = false; }
 }
 function onReady(i) {
   phase = "back";
   index = i;
   $("#pack-info").hidden = true;
-  $("#card-info").hidden = i === 0;
+  $("#card-info").hidden = true;
   $("#card-info").innerHTML =
     `<div class="series-kicker">YOUR NEXT DISCOVERY</div><h2>The unknown.</h2><p>Some things are worth <br>taking a moment for.</p><div class="info-divider"></div><div class="info-row"><span>Card</span><b>${String(i + 1).padStart(2, "0")} / 05</b></div>${i === 4 ? '<div class="guarantee"><span>✦</span> Your guaranteed holo</div>' : ""}`;
   $("#card-progress").hidden = false;
@@ -174,9 +275,7 @@ function onRevealed(i) {
     info = BUILDERS[c.person],
     finish = FINISHES[c.finish],
     key = cardKey(c),
-    isNew = !save.cards[key];
-  save.cards[key] = (save.cards[key] || 0) + 1;
-  persist();
+    isNew = save.cards[key] === 1;
   $("#card-info").innerHTML =
     `<div class="finish-tag" style="--finish:${finish.color}">${finish.symbol} ${finish.label}</div><h2>${info.name}</h2><a class="profile-link" href="https://x.com/${info.handle}" target="_blank" rel="noopener noreferrer">@${info.handle} <i data-lucide="arrow-up-right"></i></a><p class="person-quote">${info.bio}</p><div class="info-divider"></div><div class="info-row"><span>Card class</span><b>${info.specialty}</b></div><div class="info-row"><span>The Builders</span><b>#${String(c.person + 1).padStart(3, "0")}</b></div><div class="saved-label"><i data-lucide="${isNew ? "sparkles" : "check"}"></i> ${isNew ? "New to your collection" : "Added to your collection"}</div>`;
   updateProgress();
@@ -199,8 +298,10 @@ function onComplete() {
   $("#card-info").hidden = true;
   $("#summary").hidden = false;
   const best = pack.reduce((a, b) => (b.finish > a.finish ? b : a));
+  // Preserve the bonus controls when replacing the summary contents.
+  $(".room").append(bonusPanel);
   $("#summary").innerHTML =
-    `<div class="eyebrow">FIVE CARDS. ONE GOOD FEELING.</div><h2>A lovely little haul<span>.</span></h2><p>${FINISHES[best.finish].name} magic. All tucked into your collection.</p><div class="pulls-row">${pack.map((c, i) => `<button class="pull-card" data-pull="${i}" style="--card-i:${i};--finish:${FINISHES[c.finish].color}" aria-label="Inspect ${BUILDERS[c.person].name}, ${FINISHES[c.finish].name}"><img src="${textures.cardURL(c)}" alt="${BUILDERS[c.person].name}"/><span>${FINISHES[c.finish].symbol} ${FINISHES[c.finish].name}</span></button>`).join("")}</div><button class="primary-button" id="another-pack">One more little mystery</button><button class="text-link" id="view-all">Visit your collection <i data-lucide="arrow-right"></i></button>`;
+    `<div class="eyebrow">FIVE CARDS. ONE GOOD FEELING.</div><h2>A lovely little haul<span>.</span></h2><p>${FINISHES[best.finish].name} magic. All tucked into your collection.</p><div class="pulls-row">${pack.map((c, i) => `<button class="pull-card" data-pull="${i}" style="--card-i:${i};--finish:${FINISHES[c.finish].color}" aria-label="Inspect ${BUILDERS[c.person].name}, ${FINISHES[c.finish].name}"><img src="${textures.cardURL(c)}" alt="${BUILDERS[c.person].name}"/><span>${FINISHES[c.finish].symbol} ${FINISHES[c.finish].name}</span></button>`).join("")}</div><button class="primary-button" id="another-pack">Open more booster packs</button><button class="text-link" id="view-all">Visit your collection <i data-lucide="arrow-right"></i></button>`;
   $("#another-pack").onclick = reset;
   $("#view-all").onclick = openCollection;
   document
@@ -210,30 +311,72 @@ function onComplete() {
     );
   refreshIcons();
   announce("Pack complete. All five cards are in your collection.");
+  renderBonus();
 }
-function reset() {
-  phase = "sealed";
+async function reset() {
+  if (networkBusy) return;
+  networkBusy = true;
+  try {
+    acceptState(await request('state'));
+    if (activePack) restoreActivePack();
+    else resetView();
+    updateBonusTimer();
+  } catch (error) { toast(error.message); }
+  finally { networkBusy = false; }
+}
+function restoreActivePack() {
+  if (!activePack || !scene) return;
+  pack = activePack.cards;
+  currentPackId = activePack.id;
+  $('#summary').hidden = true;
+  $('#seal-hint').hidden = true;
+  scene.restore(pack, activePack.index, activePack.revealed);
+  renderBonus();
+}
+function resetView() {
+  const locked = packsRemaining(save.packAccess) === 0;
+  phase = locked ? "locked" : "sealed";
   index = 0;
   pack = [];
-  scene.reset();
+  currentPackId = null;
+  scene.reset(locked);
   $("#summary").hidden = true;
   $("#stage-bottom").hidden = true;
   $("#card-info").hidden = true;
-  $("#pack-info").hidden = false;
+  $("#pack-info").hidden = locked;
   $("#card-progress").hidden = true;
-  $("#seal-hint").hidden = false;
+  $("#seal-hint").hidden = locked;
+  updateCounts();
+  renderBonus();
   refreshIcons();
 }
-function action() {
+async function action() {
+  if (networkBusy) return;
   sound.unlock();
-  if (phase === "sealed" || phase === "tearing") scene.autoTear();
-  else if (phase === "back") {
-    phase = "flipping";
-    scene.reveal();
-  } else if (phase === "front") {
-    phase = "advancing";
-    scene.next();
+  if (phase === 'locked') {
+    bonusPanel.querySelector('a:not([hidden]), button:not([hidden])')?.focus();
+    return;
   }
+  if (phase === 'sealed' || phase === 'tearing') { scene.autoTear(); return; }
+  if (!['back', 'front'].includes(phase)) return;
+  const revealing = phase === 'back';
+  phase = revealing ? 'flipping' : 'advancing';
+  $('#card-info').hidden = true;
+  networkBusy = true;
+  try {
+    acceptState(await request(revealing ? 'reveal' : 'next', { packId: currentPackId, index }));
+    if (revealing) {
+      if (!activePack || activePack.id !== currentPackId || activePack.index !== index) {
+        if (activePack) restoreActivePack(); else resetView();
+      } else scene.reveal();
+    } else if (activePack && (activePack.id !== currentPackId || activePack.index !== index + 1 || activePack.revealed)) restoreActivePack();
+    else if (!activePack && index < 4) resetView();
+    else scene.next();
+  } catch (error) {
+    phase = revealing ? 'back' : 'front';
+    $('#card-info').hidden = revealing;
+    toast(error.message);
+  } finally { networkBusy = false; }
 }
 function dialogOpen(el) {
   sound.unlock();
@@ -277,7 +420,7 @@ function renderCollection() {
             `<button class="collection-card" data-card="${cardKey(c)}"><div class="collection-card-image"><img loading="lazy" src="${textures.cardURL(c)}" alt="${BUILDERS[c.person].name}, ${FINISHES[c.finish].name}"><span class="duplicate-count">×${c.count}</span></div><b>${BUILDERS[c.person].name}</b><span style="color:${FINISHES[c.finish].color}">${FINISHES[c.finish].symbol} ${FINISHES[c.finish].name}</span></button>`,
         )
         .join("")
-    : `<div class="empty-collection">${brandMark}<h3>${Object.keys(save.cards).length ? "Still a little mystery." : "Every collection starts with a little curiosity."}</h3><p>${Object.keys(save.cards).length ? "No cards in this finish yet. Your next pack could change that." : "Your first discovery is one rip away. Open a pack to get started."}</p><button class="primary-button" id="empty-back">Back to the pack room<i data-lucide="arrow-right"></i></button></div>`;
+    : `<div class="empty-collection">${brandMark}<h3>${Object.keys(save.cards).length ? "No cards in this finish yet." : "Every collection starts with a little curiosity."}</h3><p>${Object.keys(save.cards).length ? "No cards in this finish yet. Your next pack could change that." : "Your first discovery is one rip away. Open a pack to get started."}</p><button class="primary-button" id="empty-back">Back to the pack room<i data-lucide="arrow-right"></i></button></div>`;
   $("#empty-back")?.addEventListener("click", () =>
     dialogClose($("#collection-dialog")),
   );
@@ -308,6 +451,7 @@ function inspect(card, fromCollection) {
   $(".room").append(div);
   $("#close-inspect").onclick = () => closeInspect();
   $("#flip-inspect").onclick = () => scene.flipInspection();
+  renderBonus();
   refreshIcons();
 }
 function closeInspect(reopen = collectionReturn) {
@@ -317,12 +461,12 @@ function closeInspect(reopen = collectionReturn) {
   $("#inspection").remove();
   if (phase === "summary") $("#summary").hidden = false;
   else {
-    $("#stage-bottom").hidden = ["sealed", "tearing", "opening"].includes(phase);
+    $("#stage-bottom").hidden = ["locked", "sealed", "tearing", "opening"].includes(phase);
     $("#pack-info").hidden = phase !== "sealed";
     $("#seal-hint").hidden = phase !== "sealed";
-    $("#card-info").hidden = ["sealed", "tearing", "opening"].includes(phase)
-      || (index === 0 && ["back", "flipping"].includes(phase));
+    $("#card-info").hidden = phase !== "front";
   }
+  renderBonus();
   if (reopen) openCollection();
 }
 function toggleSound() {
@@ -339,6 +483,7 @@ $("#collection-nav").onclick = openCollection;
 $("#room-nav").onclick = () => {
   if (inspecting) closeInspect();
   document.querySelectorAll("dialog[open]").forEach(dialogClose);
+  syncGame();
 };
 function renderBuilders() {
   if (!textures) return;
@@ -354,7 +499,6 @@ function renderBuilders() {
   refreshIcons();
 }
 $("#builder-search").oninput = renderBuilders;
-$("#help").onclick = () => dialogOpen($("#help-dialog"));
 $("#start-guide").onclick = () => dialogClose($("#help-dialog"));
 document
   .querySelectorAll(".close-dialog")
@@ -424,6 +568,7 @@ refreshIcons();
 updateCounts();
 async function start() {
   try {
+    acceptState(await initializePlayer());
     const images = [
       ...PORTRAIT_SHEETS.map((sheet) => sheet.file),
       "builders-pack-peter-v2.png",
@@ -460,7 +605,8 @@ async function start() {
       },
     });
     $("#loading").remove();
-    reset();
+    if (activePack) restoreActivePack(); else resetView();
+    updateBonusTimer();
     if (import.meta.env.DEV)
       window.__rift = {
         get state() {
@@ -484,8 +630,10 @@ async function start() {
       };
   } catch (err) {
     console.error(err);
-    $("#loading").innerHTML =
-      '<span>This room needs WebGL to work its magic.</span><p>Try refreshing or opening in a browser with hardware acceleration enabled.</p><button class="secondary-button" onclick="location.reload()">Try again</button>';
+    const loading = $("#loading") || document.createElement('div');
+    if (!loading.isConnected) $('#three-stage').append(loading);
+    loading.className = 'loading';
+    loading.innerHTML = '<span>We couldn’t open your collection.</span><p>Check your connection and try again.</p><button class="secondary-button" onclick="location.reload()">Try again</button>';
   }
 }
 start();

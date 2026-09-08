@@ -11,6 +11,7 @@ import {
   saveCollection,
   STORAGE_KEY,
 } from "../src/data.js";
+import { cleanPackAccess } from "../src/pack-access.js";
 import { PORTRAIT_SHEETS, portraitLocation } from "../src/artwork.js";
 import { existsSync } from "node:fs";
 test("10,000 seeded packs each have five different builders and a guaranteed holographic or gold final card", () => {
@@ -75,9 +76,9 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
       },
       packs: Infinity,
     }),
-    { cards: { "0-0": 2, "8-3": 1, "29-3": 1 }, packs: 0 },
+    { cards: { "0-0": 2, "8-3": 1, "29-3": 1 }, packs: 0, packAccess: cleanPackAccess() },
   );
-  assert.deepEqual(cleanSave(null), { cards: {}, packs: 0 });
+  assert.deepEqual(cleanSave(null), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
 });
 test("collection survives save/load and corrupted or unavailable storage degrades safely", () => {
   const memory = new Map();
@@ -90,9 +91,9 @@ test("collection survives save/load and corrupted or unavailable storage degrade
     packs: 4,
   };
   assert.equal(saveCollection(storage, state), true);
-  assert.deepEqual(loadSave(storage), state);
+  assert.deepEqual(loadSave(storage), { ...state, packAccess: cleanPackAccess() });
   memory.set(STORAGE_KEY, "broken json");
-  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0 });
+  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
   assert.equal(
     saveCollection(
       {
@@ -110,7 +111,7 @@ test("collection survives save/load and corrupted or unavailable storage degrade
         throw new Error("denied");
       },
     }),
-    { cards: {}, packs: 0 },
+    { cards: {}, packs: 0, packAccess: cleanPackAccess() },
   );
 });
 
@@ -121,10 +122,10 @@ test("Builders edition never reads or overwrites the original creature collectio
     getItem: (key) => memory.get(key),
     setItem: (key, value) => memory.set(key, value),
   };
-  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0 });
+  assert.deepEqual(loadSave(storage), { cards: {}, packs: 0, packAccess: cleanPackAccess() });
   saveCollection(storage, { cards: { "1-3": 1 }, packs: 1 });
   assert.equal(memory.get("rift.collection.v1"), legacy);
-  assert.deepEqual(loadSave(storage), { cards: { "1-3": 1 }, packs: 1 });
+  assert.deepEqual(loadSave(storage), { cards: { "1-3": 1 }, packs: 1, packAccess: cleanPackAccess() });
 });
 
 test("expansion preserves the original nine card identities and old saves", () => {
@@ -135,7 +136,7 @@ test("expansion preserves the original nine card identities and old saves", () =
   assert.equal(BUILDERS[29].handle, "ajambrosino");
   assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 30);
   const oldSave = { cards: Object.fromEntries(originalHandles.map((_, person) => [`${person}-3`, person + 1])), packs: 17 };
-  assert.deepEqual(cleanSave(oldSave), oldSave);
+  assert.deepEqual(cleanSave(oldSave), { ...oldSave, packAccess: cleanPackAccess() });
 });
 
 test("every builder maps to a unique, existing portrait cell", () => {
