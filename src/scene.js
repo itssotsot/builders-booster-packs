@@ -592,22 +592,6 @@ export class PackScene {
       },
     );
   }
-  restore(cards, index, revealed) {
-    this.reset(true);
-    this.index = index;
-    this.packCards = cards.map((card, i) => {
-      const g = this.createCard(card);
-      g.position.set(i === index ? 0 : i * 0.025, i === index ? 0 : -i * 0.025, i === index ? 0.85 : -1.25 - i * 0.05);
-      g.rotation.y = i === index && revealed ? 0 : Math.PI;
-      g.visible = i >= index;
-      return g;
-    });
-    this.mode = revealed ? "front" : "back";
-    this.flip = revealed ? 0 : Math.PI;
-    this.shadow.visible = true;
-    this.cb.onReady?.(index);
-    if (revealed) this.cb.onRevealed?.(index);
-  }
   reveal() {
     if (this.mode !== "back") return;
     this.mode = "flipping";

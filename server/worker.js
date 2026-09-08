@@ -1,5 +1,5 @@
-import { GameError, initialState, publicState, changeState } from './game.js';
-import { readPlayer, createPlayer, updatePlayer } from './database.js';
+import { GameError, initialState } from './game.js';
+import { readPlayer, createPlayer, operate } from './database.js';
 
 const YEAR = 60 * 60 * 24 * 365;
 const cookieName = (url) => url.protocol === 'https:' ? '__Host-booster-player' : 'booster-player';
@@ -49,10 +49,10 @@ export async function handleApi(request, env, now = Date.now()) {
     } else if (!id) throw new GameError('Your browser session has expired. Refresh to continue.', 401);
     let action;
     if ((url.pathname === '/api/state' && request.method === 'GET') || (url.pathname === '/api/session' && request.method === 'POST')) action = 'state';
-    else if (request.method === 'POST' && /^\/api\/(open|reveal|next|bonus)$/.test(url.pathname)) action = url.pathname.slice(5);
+    else if (request.method === 'POST' && /^\/api\/(open|bonus)$/.test(url.pathname)) action = url.pathname.slice(5);
     else throw new GameError('Not found.', 404);
-    const state = await updatePlayer(env.DB, id, state => changeState(state, action, body, now), now);
-    return json(publicState(state, now), 200, sessionCookie(url, token));
+    const state = await operate(env.DB, id, action, body, now);
+    return json(state, 200, sessionCookie(url, token));
   } catch (error) {
     if (!(error instanceof GameError)) console.error('Collection operation failed:', error.message);
     return json({ error: error instanceof GameError ? error.message : 'Could not save your collection. Please try again.' }, error.status || 503);

@@ -23,8 +23,14 @@ export function localDatabase(filename = '.data/collections.sqlite') {
       return {
         bind(...values) { args = values; return this; },
         async first() { return database.prepare(sql).get(...args) ?? null; },
-        async run() { const result = database.prepare(sql).run(...args); return { meta: { changes: Number(result.changes) } }; },
+        execute() { const result = database.prepare(sql).run(...args); return { meta: { changes: Number(result.changes) } }; },
+        async run() { return this.execute(); },
       };
+    },
+    async batch(statements) {
+      database.exec("BEGIN IMMEDIATE");
+      try { const results = statements.map(s => s.execute()); database.exec("COMMIT"); return results; }
+      catch (error) { database.exec("ROLLBACK"); throw error; }
     },
     close() { database.close(); },
   };

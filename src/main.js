@@ -36,7 +36,7 @@ import {
   packsRemaining,
   bonusSecondsRemaining,
 } from "./pack-access";
-import { initializePlayer, request, serverNow } from "./api.js";
+import { initializePlayer, request, requestPack, serverNow } from "./api.js";
 
 const icons = {
   ArrowUpRight,
@@ -57,9 +57,8 @@ const icons = {
 const $ = (s) => document.querySelector(s);
 const sound = new Sound();
 let save = cleanSave(null);
-let activePack = null;
-let currentPackId = null;
-let networkBusy = false;
+let openingRequest = null;
+let openingRequestId = null;
 let scene,
   textures,
   pack = [],
@@ -113,7 +112,6 @@ let bonusStarting = false;
 let bonusPolling = false;
 function acceptState(data) {
   save = data.save;
-  activePack = data.activePack;
   updateCounts();
 }
 function renderBonus() {
@@ -193,13 +191,10 @@ $("#follow-bonus").addEventListener("click", async (event) => {
 });
 $("#bonus-continue").onclick = () => packsRemaining(save.packAccess) ? reset() : openCollection();
 async function syncGame() {
-  if (!scene || networkBusy || !['sealed', 'locked', 'front', 'back', 'summary'].includes(phase) || inspecting) return;
+  if (!scene || openingRequest || !['sealed', 'locked', 'front', 'back', 'summary'].includes(phase) || inspecting) return;
   try {
     acceptState(await request('state'));
-    if (activePack && (activePack.id !== currentPackId || activePack.index !== index
-      || activePack.revealed !== (phase === 'front'))) restoreActivePack();
-    else if (!activePack && ['front', 'back'].includes(phase)) resetView();
-    else if (['sealed', 'locked'].includes(phase)) resetView();
+    if (['sealed', 'locked'].includes(phase) && !openingRequest) resetView();
     updateBonusTimer();
   } catch (error) { toast(error.message); }
 }
@@ -232,6 +227,7 @@ function toast(text) {
 function onTearStart() {
   if (phase === "sealed") {
     phase = "tearing";
+    preparePack();
     $("#pack-info").hidden = true;
     $("#card-info").hidden = true;
     $("#seal-hint").hidden = true;
@@ -239,21 +235,32 @@ function onTearStart() {
     announce("Tearing the pack. Keep dragging across the seal.");
   }
 }
+function preparePack() {
+  if (openingRequest) return openingRequest;
+  openingRequestId ||= crypto.randomUUID();
+  // Catch immediately: the player may still be dragging when the request fails.
+  openingRequest = requestPack(openingRequestId).then(data => {
+    acceptState(data);
+    return { data };
+  }, error => ({ error }));
+  return openingRequest;
+}
 async function onOpen() {
-  if (!['sealed', 'tearing'].includes(phase) || networkBusy) return;
+  if (!['sealed', 'tearing'].includes(phase)) return;
   phase = 'opening';
-  networkBusy = true;
-  try {
-    acceptState(await request('open', { requestId: crypto.randomUUID() }));
-    if (!activePack) { resetView(); return; }
-    pack = activePack.cards;
-    currentPackId = activePack.id;
-    $('#seal-hint').hidden = true;
-    $('#tear-meter').hidden = true;
-    if (activePack.index || activePack.revealed) restoreActivePack();
-    else scene.open(pack);
-  } catch (error) { resetView(); toast(error.message); }
-  finally { networkBusy = false; }
+  const { data, error } = await preparePack();
+  openingRequest = null;
+  if (error) {
+    // Preserve the request ID so a retry recovers a committed pack after a lost response.
+    resetView();
+    toast(error.message);
+    return;
+  }
+  openingRequestId = null;
+  pack = data.pack.cards;
+  $('#seal-hint').hidden = true;
+  $('#tear-meter').hidden = true;
+  scene.open(pack);
 }
 function onReady(i) {
   phase = "back";
@@ -313,32 +320,16 @@ function onComplete() {
   announce("Pack complete. All five cards are in your collection.");
   renderBonus();
 }
-async function reset() {
-  if (networkBusy) return;
-  networkBusy = true;
-  try {
-    acceptState(await request('state'));
-    if (activePack) restoreActivePack();
-    else resetView();
-    updateBonusTimer();
-  } catch (error) { toast(error.message); }
-  finally { networkBusy = false; }
-}
-function restoreActivePack() {
-  if (!activePack || !scene) return;
-  pack = activePack.cards;
-  currentPackId = activePack.id;
-  $('#summary').hidden = true;
-  $('#seal-hint').hidden = true;
-  scene.restore(pack, activePack.index, activePack.revealed);
-  renderBonus();
+function reset() {
+  if (openingRequest || phase === 'opening') return;
+  resetView();
+  updateBonusTimer();
 }
 function resetView() {
   const locked = packsRemaining(save.packAccess) === 0;
   phase = locked ? "locked" : "sealed";
   index = 0;
   pack = [];
-  currentPackId = null;
   scene.reset(locked);
   $("#summary").hidden = true;
   $("#stage-bottom").hidden = true;
@@ -350,8 +341,7 @@ function resetView() {
   renderBonus();
   refreshIcons();
 }
-async function action() {
-  if (networkBusy) return;
+function action() {
   sound.unlock();
   if (phase === 'locked') {
     bonusPanel.querySelector('a:not([hidden]), button:not([hidden])')?.focus();
@@ -362,21 +352,8 @@ async function action() {
   const revealing = phase === 'back';
   phase = revealing ? 'flipping' : 'advancing';
   $('#card-info').hidden = true;
-  networkBusy = true;
-  try {
-    acceptState(await request(revealing ? 'reveal' : 'next', { packId: currentPackId, index }));
-    if (revealing) {
-      if (!activePack || activePack.id !== currentPackId || activePack.index !== index) {
-        if (activePack) restoreActivePack(); else resetView();
-      } else scene.reveal();
-    } else if (activePack && (activePack.id !== currentPackId || activePack.index !== index + 1 || activePack.revealed)) restoreActivePack();
-    else if (!activePack && index < 4) resetView();
-    else scene.next();
-  } catch (error) {
-    phase = revealing ? 'back' : 'front';
-    $('#card-info').hidden = revealing;
-    toast(error.message);
-  } finally { networkBusy = false; }
+  if (revealing) scene.reveal();
+  else scene.next();
 }
 function dialogOpen(el) {
   sound.unlock();
@@ -605,7 +582,7 @@ async function start() {
       },
     });
     $("#loading").remove();
-    if (activePack) restoreActivePack(); else resetView();
+    resetView();
     updateBonusTimer();
     if (import.meta.env.DEV)
       window.__rift = {

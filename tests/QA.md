@@ -170,3 +170,10 @@ The final compiled build was checked in a clean browser tab at 1280 × 720: one 
 - Background pointer drags move the independent room camera within bounded horizontal and vertical offsets. Release, cancellation, lost capture, window blur, and hidden-document events return the target to the original camera position. Reduced motion uses faster settling.
 - Pack/card hit targets and UI controls are excluded from room gestures. Removed passive hover parallax so the room returns to its original composition.
 - All 23 automated tests and the production build passed; diff whitespace validation passed. No browser interaction QA or deployment performed for this change.
+
+## 2026-09-08 — Pack-level ownership and local reveals
+
+- Replaced JSON player aggregates with `users`, individual owned `card` rows, and durable `pack_openings` request receipts. The new migration preserves identities, allowance, duplicate counts, and bonus state, and grants the unshown remainder of old unfinished packs without duplicating shown cards.
+- The opening request starts when tearing begins. All five cards and the pack debit commit atomically; reveals and next-card animations run locally without network calls. Reload restores the collection rather than a reveal position. The first card still requires the server-generated pack response on a slow connection.
+- All 28 tests pass, including concurrent same/different request IDs, retries after later openings, transaction rollback on insertion failure, duplicate expansion, migration of an old partly revealed pack, five-second bonus, and transport retry identity. Production build passed. Local HTTP smoke confirmed five owned cards immediately after opening and no resumed opening state on refresh.
+- No browser interaction QA, push, or deployment performed for this revision.
