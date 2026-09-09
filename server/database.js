@@ -1,5 +1,5 @@
 import { GameError } from './game.js';
-import { makePack } from '../src/data.js';
+import { makePack, getPack } from '../src/data.js';
 import { BONUS_DELAY_MS } from '../src/pack-access.js';
 
 export const readPlayer = (db, id) => db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
@@ -33,6 +33,8 @@ export async function operate(db, id, action, body, now) {
     await db.prepare('UPDATE users SET bonus_started_at = ?, revision = revision + 1, updated_at = ? WHERE id = ? AND bonus_claimed = 0 AND bonus_started_at IS NULL AND opened >= 3')
       .bind(now, now, id).run();
   } else if (action === 'open') {
+    const edition = body.edition === undefined ? 'openai' : body.edition;
+    if (!getPack(edition)) throw new GameError('Unknown pack edition.', 400);
     if (typeof body.requestId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(body.requestId)) throw new GameError('Invalid pack request.', 400);
     for (let attempt = 0; attempt < 8; attempt++) {
       const previous = await receipt(db, id, body.requestId);
@@ -42,7 +44,7 @@ export async function operate(db, id, action, body, now) {
       const settled = await receipt(db, id, body.requestId);
       if (settled) return snapshot(db, id, now, settled);
       if (user.opened >= 3 + user.bonus_claimed * 1000) throw new GameError('No packs left. Claim your bonus to keep opening.');
-      const packId = crypto.randomUUID(), cards = makePack();
+      const packId = crypto.randomUUID(), cards = makePack(Math.random, edition);
       const results = await db.batch([
         db.prepare(`INSERT INTO pack_openings (id, user_id, request_id, created_at)
           SELECT ?, id, ?, ? FROM users WHERE id = ? AND revision = ? AND opened < 3 + bonus_claimed * 1000

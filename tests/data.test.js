@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BUILDERS,
+  OPENAI_BUILDERS,
+  PACKS,
+  getPack,
+  packForPerson,
   COLLECTION_SIZE,
   makePack,
   seededRandom,
@@ -63,7 +67,7 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
         "0-0": 2,
         "8-3": 1,
         "29-3": 1,
-        "32-0": 1,
+        "75-0": 1,
         "1-4": 3,
         "1-1": -2,
         "2-1": 1.5,
@@ -80,17 +84,18 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
 test("expansion preserves the original nine card identities and old saves", () => {
   const originalHandles = ["thsottiaux", "sama", "Dimillian", "gdb", "polynoamial", "romainhuet", "embirico", "nickaturley", "michpokrass"];
   assert.deepEqual(BUILDERS.slice(0, 9).map((b) => b.handle), originalHandles);
-  assert.equal(BUILDERS.length, 32);
-  assert.equal(COLLECTION_SIZE, 128);
+  assert.equal(OPENAI_BUILDERS.length, 32);
+  assert.equal(BUILDERS.length, 75);
+  assert.equal(COLLECTION_SIZE, 292);
   assert.equal(BUILDERS[29].handle, "ajambrosino");
   assert.equal(BUILDERS[30].handle, "charliermarsh");
   assert.equal(BUILDERS[31].handle, "victornunez");
-  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 32);
+  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 74);
   const oldSave = { cards: Object.fromEntries(originalHandles.map((_, person) => [`${person}-3`, person + 1])), packs: 17 };
   assert.deepEqual(cleanSave(oldSave), { ...oldSave, packAccess: cleanPackAccess() });
 });
 
-test("every builder maps to a unique, existing portrait cell", () => {
+test("every builder maps to an existing portrait cell, with distinct illustrated X artwork", () => {
   const cells = new Set();
   for (let person = 0; person < BUILDERS.length; person++) {
     const p = portraitLocation(person);
@@ -100,5 +105,48 @@ test("every builder maps to a unique, existing portrait cell", () => {
     cells.add(`${p.sheetIndex}-${p.column}-${p.row}`);
   }
   assert.equal(cells.size, BUILDERS.length);
-  for (const invalid of [-1, 32, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
+  assert.notDeepEqual(portraitLocation(73), portraitLocation(2));
+  for (const person of getPack("x-builders").people) {
+    const { sheetIndex } = portraitLocation(person);
+    if (BUILDERS[person].handle === "LexnLin") {
+      assert.equal(PORTRAIT_SHEETS[sheetIndex].file, "x-builders/lexnlin.jpg");
+    } else {
+      assert.ok(PORTRAIT_SHEETS[sheetIndex].file.startsWith("x-builders-illustrated/"));
+    }
+  }
+  assert.deepEqual(cleanSave({cards:{"2-3":1,"73-3":2,"74-0":1}}).cards, {"2-3":1,"73-3":2,"74-0":1});
+  for (const invalid of [-1, 75, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
+});
+
+test('the X Builders roster matches the 41 active selected accounts exactly', () => {
+  const selected = 'levelsio mattpocockuk theo adamlyttleapps LLMJunky twannl dhh DonnyWals fireship_dev FlorinPop17 realGeorgeHotz ID_AA_Carmack johnsundell thekitze marclou MengTo neetcode1 twostraws rudrank seanallen_dev ThePrimeagen v_pradeilles weswinder itshanrw alexcooldev ios_dev_alb PirateSoftware Angaisb_ an21m daveschatz emanueledpt yacineMTB LexnLin krzyzanowskim marvinvonhagen mntruell mikeyk nikitabier iruletheworldmo argofowl Ananth7e'.toLowerCase().split(' ').sort();
+  const pool = getPack('x-builders');
+  assert.equal(pool.count, 41);
+  assert.equal(pool.people.includes(73), false);
+  assert.equal(getPack("openai").people.includes(2), true);
+  assert.equal(pool.start, 32);
+  assert.equal(BUILDERS[37].handle, 'karpathy');
+  assert.equal(BUILDERS[38].handle, 'twannl');
+  assert.equal(pool.people.includes(37), false);
+  assert.equal(packForPerson(74).id, 'x-builders');
+  assert.deepEqual(cleanSave({cards:{'37-3':1,'38-3':2,'74-0':1}}).cards, {'38-3':2,'74-0':1});
+  assert.deepEqual(pool.people.map(person => BUILDERS[person].handle.toLowerCase()).sort(), selected);
+  assert.deepEqual(cleanSave({cards:{'0-0':1,'31-3':2,'32-0':1,'71-3':2}}).cards, {'0-0':1,'31-3':2,'32-0':1,'71-3':2});
+});
+
+test('both editions draw only from their own pool and retain the rarity distribution', () => {
+  for (const edition of PACKS) {
+    const rng = seededRandom(260909), seen = new Set();
+    let gold = 0;
+    for (let i=0;i<10000;i++) {
+      const pack = makePack(rng, edition.id);
+      assert.equal(new Set(pack.map(c=>c.person)).size, 5);
+      for (const card of pack) { assert.equal(packForPerson(card.person).id, edition.id); seen.add(card.person); }
+      assert.ok(pack[4].finish >= 2);
+      gold += pack[4].finish === 3;
+    }
+    assert.equal(seen.size, edition.count);
+    assert.ok(gold > 60 && gold < 140);
+  }
+  assert.throws(()=>makePack(Math.random, 'invented'), RangeError);
 });

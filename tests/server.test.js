@@ -182,3 +182,25 @@ test('migration preserves users, duplicate cards, bonus and unshown cards in old
     assert.ok(migrated.prepare("SELECT name FROM sqlite_master WHERE name = 'users'").get());
   })();
 });
+
+test('pack editions save all five cards from the selected roster and share the balance', async t => {
+  const DB = fixture(t), a = await player(DB);
+  const requestId = crypto.randomUUID();
+  const x = await call(DB, 'open', {requestId, edition:'x-builders'}, a.cookie);
+  assert.equal(x.status, 200);
+  assert.ok(x.data.pack.cards.every(c => c.person >= 32 && c.person < 75));
+  assert.equal(Object.values(x.data.save.cards).reduce((a,b)=>a+b,0), 5);
+  const repeated = await call(DB, 'open', {requestId, edition:'x-builders'}, a.cookie);
+  assert.deepEqual(repeated.data.pack, x.data.pack);
+  assert.equal(repeated.data.save.packs, 1);
+  // A receipt already granted cannot be exchanged into another roster on retry.
+  const changed = await call(DB, 'open', {requestId, edition:'openai'}, a.cookie);
+  assert.deepEqual(changed.data.pack, x.data.pack);
+  const original = await open(DB, a.cookie);
+  assert.ok(original.pack.cards.every(c=>c.person < 32));
+  assert.equal(Object.values(original.save.cards).reduce((a,b)=>a+b,0), 10);
+  assert.equal(packsRemaining(original.save.packAccess), 1);
+  const invalid = await call(DB, 'open', {requestId:crypto.randomUUID(), edition:'invented'}, a.cookie);
+  assert.equal(invalid.status,400);
+  assert.equal((await call(DB,'state',undefined,a.cookie)).data.save.packs,2);
+});

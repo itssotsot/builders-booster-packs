@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { FINISHES } from "./data";
+import { FINISHES, packForPerson } from "./data";
 import { CozyRoom } from "./cozy-room";
 import { CARD_SURFACE, CARD_RADIUS_PIXELS } from "./card-surface";
 const clamp = THREE.MathUtils.clamp;
@@ -121,6 +121,8 @@ export class PackScene {
     this.tweens = [];
     this.particles = [];
     this.packCards = [];
+    this.packChoices = [];
+    this.selectedEdition = textures.edition.id;
     const { width, height, radius } = CARD_SURFACE;
     this.cardGeometry = faceGeometry(width, height, radius);
     this.cardBodyGeometry = new THREE.ExtrudeGeometry(
@@ -129,7 +131,8 @@ export class PackScene {
     );
     this.cardBodyGeometry.translate(0, 0, -0.02);
     this.cardBack = this.textures.back();
-    this.packTexture = this.textures.pack();
+    this.packTexture = this.cb.packTextures?.[this.selectedEdition] || this.textures.pack();
+    host.tabIndex = 0;
     this.cozyRoom = new CozyRoom(this.env.texture, this.cardBack);
     this.createDust();
     this.createShadow();
@@ -189,8 +192,9 @@ export class PackScene {
     this.camera.aspect = width / height;
     this.camera.position.z = this.camera.aspect < 0.75 ? 10 : 9;
     this.camera.updateProjectionMatrix();
+    if (this.mode === "sealed") this.layoutPacks();
   }
-  wrapperPiece(y0, y1, isStrip = false, back = false) {
+  wrapperPiece(y0, y1, isStrip = false, back = false, texture = this.packTexture) {
     const w = 2.8,
       h = 4.2,
       g = new THREE.PlaneGeometry(w, y1 - y0, 80, isStrip ? 7 : 44);
@@ -210,7 +214,7 @@ export class PackScene {
     }
     g.computeVertexNormals();
     const mat = new THREE.MeshPhysicalMaterial({
-      map: back ? null : this.packTexture,
+      map: back ? null : texture,
       color: back ? 0x82927c : 0xffffff,
       roughness: back ? 0.3 : 0.43,
       metalness: back ? 0.82 : 0.34,
@@ -225,7 +229,10 @@ export class PackScene {
     return mesh;
   }
   reset(locked = false) {
-    if (this.pack) this.disposeGroup(this.pack);
+    this.host.classList.remove('pack-carousel');
+    this.cardStageWidth = this.host.getBoundingClientRect().width;
+    this.host.classList.toggle('pack-carousel', !locked);
+    this.packChoices.forEach(group => this.disposeGroup(group));
     this.packCards.forEach((c) => this.disposeGroup(c));
     this.packCards = [];
     this.tweens = [];
@@ -236,19 +243,86 @@ export class PackScene {
     this.tearDirection = 0;
     this.rotation = { x: 0, y: 0 };
     this.flip = 0;
-    this.pack = new THREE.Group();
-    this.pack.scale.setScalar(PACK_SCALE);
-    this.front = this.wrapperPiece(-2.1, 1.72);
-    this.back = this.wrapperPiece(-2.1, 1.72, false, true);
-    this.strip = this.wrapperPiece(1.72, 2.1, true);
-    this.pack.add(this.back, this.front, this.strip);
-    this.scene.add(this.pack);
-    this.pack.rotation.set(0, 0, 0);
-    this.pack.visible = !locked;
+    this.packChoices = Object.entries(this.cb.packTextures || { [this.selectedEdition]: this.packTexture }).map(([id, texture]) => {
+      const group = new THREE.Group();
+      const front = this.wrapperPiece(-2.1, 1.72, false, false, texture);
+      const back = this.wrapperPiece(-2.1, 1.72, false, true, texture);
+      const strip = this.wrapperPiece(1.72, 2.1, true, false, texture);
+      group.add(back, front, strip);
+      group.userData = { edition: id, front, back, strip };
+      group.visible = !locked;
+      this.scene.add(group);
+      return group;
+    });
+    this.carouselPosition = this.packChoices.findIndex(pack => pack.userData.edition === this.selectedEdition);
+    this.selectPack(this.selectedEdition);
+    this.choiceConfirmed = false;
+    this.resize();
     this.shadow.visible = !locked;
     this.host.classList.remove("dragging");
     this.host.classList.toggle("pack-grab", !locked);
     this.cb.onProgress?.(0);
+  }
+  selectPack(id, notify = false) {
+    const group = this.packChoices.find(pack => pack.userData.edition === id);
+    if (!group) return;
+    this.selectedEdition = id;
+    this.choiceConfirmed = true;
+    this.pack = group;
+    ({ front: this.front, back: this.back, strip: this.strip } = group.userData);
+    this.carouselTarget = this.packChoices.indexOf(group);
+    if (notify) this.cb.onPackSelect?.(id);
+  }
+  layoutPacks() {
+    if (!this.packChoices.length) return;
+    const rect = this.host.getBoundingClientRect();
+    const units = 2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.position.z / rect.height;
+    this.carouselScale = Math.max(.2, Math.min(PACK_SCALE, Math.min(rect.width, this.cardStageWidth) * units / 7, (rect.height - 150) * units / 4.2));
+    this.carouselSpacing = this.carouselScale * 3.65;
+    this.carouselStepPixels = this.carouselSpacing / units;
+    this.positionPacks();
+  }
+  positionPacks() {
+    this.packChoices.forEach((group, i) => {
+      group.scale.setScalar(this.carouselScale);
+      group.position.x = (i - this.carouselPosition) * this.carouselSpacing;
+    });
+  }
+  stepPack(direction) {
+    if (this.mode !== 'sealed' || this.choiceConfirmed || this.drag) return;
+    const index = clamp(this.carouselTarget + direction, 0, this.packChoices.length - 1);
+    this.browsePack(index);
+  }
+  browsePack(index) {
+    if (this.choiceConfirmed) return;
+    this.carouselTarget = index;
+    this.choiceConfirmed = false;
+    this.cb.onPackBrowse?.();
+  }
+  choosePack(id) {
+    if (this.mode !== 'sealed' || this.choiceConfirmed || this.drag) return;
+    const index = this.packChoices.findIndex(group => group.userData.edition === id);
+    if (index < 0) return;
+    if (index !== this.carouselTarget || Math.abs(this.carouselPosition - index) > .015) {
+      this.browsePack(index);
+      return;
+    }
+    this.selectPack(id, true);
+  }
+
+  beginTear() {
+    this.mode = 'tearing';
+    this.packChoices.forEach(group => {
+      if (group !== this.pack && group.visible) {
+        const scale = group.scale.x;
+        group.traverse(mesh => { if (mesh.isMesh) mesh.material.transparent = true; });
+        this.tween(this.reduced ? .01 : .22, t => {
+          group.scale.setScalar(scale * (1 - .06 * t));
+          group.traverse(mesh => { if (mesh.isMesh) mesh.material.opacity = 1 - t; });
+        }, () => { group.visible = false; });
+      }
+    });
+    this.cb.onTearStart?.();
   }
   disposeGroup(group) {
     this.scene.remove(group);
@@ -296,7 +370,7 @@ export class PackScene {
     front.position.z = 0.023;
     const back = new THREE.Mesh(
       this.cardGeometry,
-      new THREE.MeshBasicMaterial({ map: this.cardBack }),
+      new THREE.MeshBasicMaterial({ map: this.textures.back(packForPerson(card.person).id) }),
     );
     back.rotation.y = Math.PI;
     back.position.z = -0.023;
@@ -311,7 +385,27 @@ export class PackScene {
       if (e.button !== 0 || this.drag) return;
       this.sound.unlock();
       if (this.mode === "sealed" || this.mode === "tearing") {
-        if (!this.isNearSeal(e)) return;
+        if (this.mode === 'sealed') {
+          const hit = this.hit(e);
+          let target = hit?.object;
+          while (target && !target.userData.edition) target = target.parent;
+          if (!target) {
+            target = this.packChoices.filter(group => group.visible && this.isNearSeal(e, group)).sort((a, b) => {
+              const x = group => (group.position.clone().project(this.camera).x * .5 + .5) * this.host.clientWidth + this.host.getBoundingClientRect().left;
+              return Math.abs(x(a) - e.clientX) - Math.abs(x(b) - e.clientX);
+            })[0];
+          }
+          if (!target) return;
+          if (this.choiceConfirmed && !this.isNearSeal(e, target)) return;
+          const centered = this.packChoices.indexOf(target) === this.carouselTarget && Math.abs(this.carouselPosition - this.carouselTarget) < .015;
+          if (!this.choiceConfirmed || target !== this.pack || !centered || !this.isNearSeal(e, target)) {
+            this.drag = { type: 'carousel', x: e.clientX, y: e.clientY, start: this.carouselPosition, target: target.userData.edition, moved: false, id: e.pointerId };
+            el.setPointerCapture(e.pointerId);
+            this.host.classList.add('dragging');
+            return;
+          }
+        }
+        if (this.cb.canTear?.() === false || !this.isNearSeal(e)) return;
         this.drag = {
           type: "tear",
           x: e.clientX,
@@ -321,8 +415,6 @@ export class PackScene {
           dir: 0,
           id: e.pointerId,
         };
-        this.mode = "tearing";
-        this.cb.onTearStart?.();
         this.sound.crinkle(0.25);
       } else if (
         this.mode === "back" ||
@@ -346,15 +438,24 @@ export class PackScene {
     el.addEventListener("pointermove", (e) => {
       if (!this.drag) {
         if (this.mode === "sealed" || this.mode === "tearing") {
-          el.style.cursor = this.isNearSeal(e) ? "ew-resize" : "default";
+          el.style.cursor = this.choiceConfirmed && this.isNearSeal(e, this.pack) ? "ew-resize" : this.hit(e) ? "grab" : "default";
         } else el.style.cursor = this.hit(e) ? "grab" : "default";
         return;
       }
       if (e.pointerId !== this.drag.id) return;
-      if (this.drag.type === "tear") {
+      if (this.drag.type === 'carousel') {
+        const dx = e.clientX - this.drag.x;
+        if (Math.abs(dx) > 5) {
+          if (!this.drag.moved) this.browsePack(this.carouselTarget);
+          this.drag.moved = true;
+        }
+        this.carouselPosition = clamp(this.drag.start - dx / this.carouselStepPixels, -.15, this.packChoices.length - .85);
+        this.positionPacks();
+      } else if (this.drag.type === "tear") {
         const dx = e.clientX - this.drag.x;
         if (!this.drag.dir) {
           if (Math.abs(dx) < 6) return;
+          if (this.mode === 'sealed') this.beginTear();
           this.drag.dir = Math.sign(dx);
           if (!this.tearDirection) this.tearDirection = this.drag.dir;
         }
@@ -384,7 +485,12 @@ export class PackScene {
       this.drag = null;
       this.host.classList.remove("dragging");
       if (el.hasPointerCapture(d.id)) el.releasePointerCapture(d.id);
-      if (d.type === "card") {
+      if (d.type === 'carousel') {
+        const delta = this.carouselPosition - d.start;
+        const index = clamp(Math.abs(delta) > .18 ? Math.round(d.start) + Math.sign(delta) : Math.round(d.start), 0, this.packChoices.length - 1);
+        if (d.moved) this.browsePack(index);
+        else if (e.type === 'pointerup') this.choosePack(d.target);
+      } else if (d.type === "card") {
         if (!d.moved && ["back", "front"].includes(this.mode))
           this.cb.onCardTap?.();
         this.rotation = { x: 0, y: 0 };
@@ -393,6 +499,18 @@ export class PackScene {
     el.addEventListener("pointerup", release);
     el.addEventListener("pointercancel", release);
     el.addEventListener("lostpointercapture", release);
+    let wheelDistance = 0, wheelEnd;
+    el.addEventListener('wheel', e => {
+      if (this.mode !== 'sealed' || this.choiceConfirmed || this.drag) return;
+      e.preventDefault();
+      wheelDistance += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (Math.abs(wheelDistance) > 45) {
+        this.stepPack(Math.sign(wheelDistance));
+        wheelDistance = 0;
+      }
+      clearTimeout(wheelEnd);
+      wheelEnd = setTimeout(() => { wheelDistance = 0; }, 150);
+    }, { passive: false });
     // Background gestures bubble here after the pack/card has claimed its own drag.
     let roomDrag = null;
     const releaseRoom = () => {
@@ -434,13 +552,13 @@ export class PackScene {
       }
     });
   }
-  isNearSeal(e) {
+  isNearSeal(e, group = this.pack) {
     const rect = this.host.getBoundingClientRect();
     // Screen-space padding keeps the grab area forgiving at every pack size.
     const points = [
       [-1.4, 2.1], [1.4, 2.1], [-1.4, 0.65], [1.4, 0.65],
     ].map(([x, y]) => {
-      const p = this.pack.localToWorld(new THREE.Vector3(x, y, 0.15)).project(this.camera);
+      const p = group.localToWorld(new THREE.Vector3(x, y, 0.15)).project(this.camera);
       return {
         x: rect.left + (p.x * 0.5 + 0.5) * rect.width,
         y: rect.top + (-p.y * 0.5 + 0.5) * rect.height,
@@ -462,9 +580,8 @@ export class PackScene {
       (-(e.clientY - r.top) / r.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(pointer, this.camera);
-    const target = ["sealed", "tearing"].includes(this.mode)
-      ? this.pack
-      : this.inspectCard || this.packCards[this.index];
+    if (this.mode === 'sealed') return this.raycaster.intersectObjects(this.packChoices.filter(group => group.visible), true)[0] || null;
+    const target = this.mode === 'tearing' ? this.pack : this.inspectCard || this.packCards[this.index];
     return target ? this.raycaster.intersectObject(target, true)[0] : null;
   }
   screenPackWidth() {
@@ -514,9 +631,14 @@ export class PackScene {
   }
   autoTear() {
     if (!["sealed", "tearing"].includes(this.mode)) return;
+    if (this.mode === 'sealed' && (!this.choiceConfirmed || Math.abs(this.carouselPosition - this.carouselTarget) > .015)) {
+      this.choosePack(this.packChoices[this.carouselTarget].userData.edition);
+      return;
+    }
+    if (this.cb.canTear?.() === false) return;
     this.sound.unlock();
+    this.beginTear();
     this.mode = "autoTear";
-    this.cb.onTearStart?.();
     const start = this.progress;
     this.tearDirection ||= 1;
     this.tween(
@@ -543,10 +665,12 @@ export class PackScene {
   }
   open(cards) {
     this.index = 0;
+    const packX = this.pack.position.x;
+    const packScale = this.pack.scale.x;
     this.packCards = cards.map((card, i) => {
       const g = this.createCard(card);
-      g.scale.setScalar(PACK_SCALE);
-      g.position.set(i * 0.025, -0.08 - i * 0.024, -0.22 - i * 0.04);
+      g.scale.setScalar(packScale);
+      g.position.set(packX + i * 0.025, -0.08 - i * 0.024, -0.22 - i * 0.04);
       g.rotation.y = Math.PI;
       g.visible = false;
       return g;
@@ -571,7 +695,9 @@ export class PackScene {
         this.pack.rotation.z = startRot - drop * 0.2;
         this.packCards.forEach((g, i) => {
           g.visible = t > 0.2;
-          g.scale.setScalar(smooth(PACK_SCALE, 1, clamp((t - 0.25) / 0.6, 0, 1)));
+          const emerge = clamp((t - 0.25) / 0.6, 0, 1);
+          g.scale.setScalar(smooth(packScale, 1, emerge));
+          g.position.x = smooth(packX + i * .025, i * .025, emerge);
           g.position.y = smooth(
             -0.4 - i * 0.025,
             -i * 0.025,
@@ -587,6 +713,8 @@ export class PackScene {
       () => {
         this.pack.visible = false;
         this.mode = "back";
+        this.host.classList.remove("pack-carousel");
+        this.resize();
         this.flip = Math.PI;
         this.cb.onReady?.(0);
       },
@@ -661,8 +789,10 @@ export class PackScene {
   inspect(card) {
     this.previousMode = this.mode;
     this.mode = "inspect";
+    this.host.classList.remove("pack-carousel");
+    this.resize();
     this.host.classList.remove("pack-grab");
-    if (this.pack) this.pack.visible = false;
+    this.packChoices.forEach(group => { group.visible = false; });
     this.packCards.forEach((g) => (g.visible = false));
     this.inspectCard = this.createCard(card);
     this.inspectCard.position.z = 0.85;
@@ -676,9 +806,10 @@ export class PackScene {
     this.disposeGroup(this.inspectCard);
     this.inspectCard = null;
     this.mode = this.previousMode;
+    this.host.classList.toggle("pack-carousel", ["sealed", "tearing"].includes(this.mode));
+    this.resize();
     this.host.classList.toggle("pack-grab", ["sealed", "tearing"].includes(this.mode));
-    if (this.pack)
-      this.pack.visible = ["sealed", "tearing"].includes(this.mode);
+    this.packChoices.forEach(group => { group.visible = (this.mode === 'sealed' && (!this.choiceConfirmed || group === this.pack)) || (this.mode === 'tearing' && group === this.pack); });
     this.packCards.forEach(
       (g, i) =>
         (g.visible = i >= this.index && ["back", "front"].includes(this.mode)),
@@ -748,9 +879,20 @@ export class PackScene {
       if (p >= 1) tween.done?.();
       else this.tweens.push(tween);
     }
+    if (this.mode === 'sealed' && this.drag?.type !== 'carousel') {
+      this.carouselPosition = this.reduced ? this.carouselTarget : THREE.MathUtils.damp(this.carouselPosition, this.carouselTarget, 10, dt);
+      this.positionPacks();
+    }
+    if (this.mode === 'sealed') {
+      this.packChoices.forEach((group, i) => {
+        group.visible = !this.choiceConfirmed || group === this.pack;
+        const depth = this.choiceConfirmed && group === this.pack ? .55 : 0;
+        group.position.z = this.reduced ? depth : THREE.MathUtils.damp(group.position.z, depth, 10, dt);
+      });
+    }
     if (["sealed", "tearing", "autoTear"].includes(this.mode)) {
       const float = this.reduced ? 0 : Math.sin(t * 0.85) * 0.045;
-      this.pack.position.y = float;
+      this.packChoices.forEach(group => { group.position.y = float + (this.mode === 'sealed' && group !== this.pack ? -.06 : 0); });
     }
     const card = this.inspectCard || this.packCards[this.index];
     if (card && ["back", "front", "inspect"].includes(this.mode)) {
@@ -820,13 +962,21 @@ export class PackScene {
       this.cb.onFrame &&
       ["sealed", "tearing", "autoTear"].includes(this.mode)
     ) {
+      const hintPack = this.mode === "sealed" ? this.packChoices[this.carouselTarget] : this.pack;
       const seal = new THREE.Vector3(0, 1.91, 0)
-        .applyMatrix4(this.pack.matrixWorld)
+        .applyMatrix4(hintPack.matrixWorld)
         .project(this.camera);
       this.cb.onFrame({
+        confirmed: this.choiceConfirmed,
         x: (seal.x * 0.5 + 0.5) * this.host.clientWidth,
         y: (-0.5 * seal.y + 0.5) * this.host.clientHeight,
       });
+      if (this.mode === 'sealed') this.cb.onPackLayout?.(this.packChoices.map(group => {
+        const p = group.localToWorld(new THREE.Vector3(0, -2.1, 0)).project(this.camera);
+        const a = group.localToWorld(new THREE.Vector3(-1.4, 0, 0)).project(this.camera);
+        const b = group.localToWorld(new THREE.Vector3(1.4, 0, 0)).project(this.camera);
+        return { id: group.userData.edition, x: (p.x * .5 + .5) * this.host.clientWidth, y: (-p.y * .5 + .5) * this.host.clientHeight, width: Math.abs(a.x - b.x) * .5 * this.host.clientWidth };
+      }));
     }
   }
 }

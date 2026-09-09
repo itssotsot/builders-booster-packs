@@ -151,3 +151,8 @@ Asset: `builders-charlie-marsh.png`, one square portrait, stable person index 30
 ## Victor E. Nunez portrait
 
 Asset: `builders-victor-nunez.png`, square portrait, stable person index 31. Generated from his public X profile portrait with `builders-09.png` as style reference. Prompt: preserve recognizable facial structure, short wavy black hair, trimmed beard, warm medium skin, gentle expression, black jacket and shirt; centered chest-up fine-ink/textured painterly graphic-novel portrait with headroom. Dark emerald and amber Codex command room, abstract context windows and luminous basketball play diagram lines; no lettering or card frame. Uses the existing four finishes.
+
+
+## X Builders illustrated expansion (2026-09-09)
+
+All 42 active X Builders now use generated illustrations from their existing profile references, matched to the OpenAI gouache/ink/neon style. The new runtime assets are in `x-builders-illustrated/`; original PNGs are retained in `output/x-builders-artwork/`. Exact prompts and reference order are recorded in `reports/x-builders-pack/illustrated-artwork-manifest.json`, with a readable index in `reports/x-builders-pack/illustrated-artwork.md`. Stable card IDs and OpenAI artwork are preserved. Dimillian has separate artwork in each pack.

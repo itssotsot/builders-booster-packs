@@ -1,8 +1,9 @@
+import { X_BUILDERS } from "./x-builders.js";
 import { cleanPackAccess } from "./pack-access.js";
 
 // Public identities; classes, abilities and numbers are fictional game flavor.
 export const SERIES = "001";
-export const BUILDERS = [
+export const OPENAI_BUILDERS = [
   {
     name: "Tibo",
     fullName: "Thibault Sottiaux",
@@ -421,6 +422,19 @@ export const BUILDERS = [
     source: "https://x.com/victornunez",
   },
 ];
+// Existing OpenAI IDs 0–31 stay fixed; the second pack uses IDs 32 onward.
+export const BUILDERS = [...OPENAI_BUILDERS, ...X_BUILDERS];
+export const PACKS = [
+  { id: "openai", name: "OpenAI Builders", label: "OPENAI", series: "001", start: 0, count: OPENAI_BUILDERS.length, art: "builders-pack-peter-v2.png" },
+  { id: "x-builders", name: "X Builders", label: "X BUILDERS", series: "001", start: OPENAI_BUILDERS.length, count: X_BUILDERS.length, art: "x-builders-pack.png" },
+].map(pack => {
+  const people = Array.from({ length: pack.count }, (_, i) => pack.start + i)
+    .filter(person => !BUILDERS[person].retired && !BUILDERS[person].unavailable);
+  return { ...pack, slots: pack.count, count: people.length, people };
+});
+export const getPack = (id = "openai") => PACKS.find(pack => pack.id === id);
+export const packForPerson = person => PACKS.find(pack => person >= pack.start && person < pack.start + pack.slots);
+export const cardNumber = person => packForPerson(person).people.indexOf(person) + 1;
 export const FINISHES = [
   { name: "Standard", label: "STANDARD", color: "#b8beb0", symbol: "●" },
   {
@@ -432,7 +446,7 @@ export const FINISHES = [
   { name: "Holographic", label: "HOLOGRAPHIC", color: "#c8b0f1", symbol: "✦" },
   { name: "Gold rare", label: "GOLD RARE", color: "#e7ca7e", symbol: "✧" },
 ];
-export const COLLECTION_SIZE = BUILDERS.length * FINISHES.length;
+export const COLLECTION_SIZE = PACKS.reduce((sum, pack) => sum + pack.count, 0) * FINISHES.length;
 export const FINAL_CARD_GOLD_PERCENT = 1;
 // Keep the original storage key so the app rename preserves existing collections.
 export function seededRandom(seed) {
@@ -444,8 +458,10 @@ export function seededRandom(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-export function makePack(rng = Math.random) {
-  const available = BUILDERS.map((_, i) => i);
+export function makePack(rng = Math.random, edition = "openai") {
+  const pool = getPack(edition);
+  if (!pool) throw new RangeError("Unknown pack edition");
+  const available = [...pool.people];
   return Array.from({ length: 5 }, (_, i) => {
     const person = available.splice(Math.floor(rng() * available.length), 1)[0];
     const r = rng();
@@ -475,6 +491,7 @@ export function cleanSave(input) {
         /^\d+-\d+$/.test(key) &&
         key === `${Number(key.split("-")[0])}-${Number(key.split("-")[1])}` &&
         Number(key.split("-")[0]) < BUILDERS.length &&
+        !BUILDERS[Number(key.split("-")[0])].retired &&
         Number(key.split("-")[1]) < FINISHES.length &&
         Number.isSafeInteger(count) &&
         count > 0

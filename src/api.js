@@ -23,9 +23,9 @@ export async function initializePlayer() {
 }
 
 // Retrying the same receipt ID can never grant or charge a second pack.
-export async function requestPack(requestId) {
+export async function requestPack(requestId, edition = "openai") {
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { return await request('open', { requestId }); }
+    try { return await request('open', { requestId, edition }); }
     catch (error) {
       if (error.status && error.status < 500) throw error;
       if (attempt === 2) throw new Error('Could not load this pack. Try tearing again; you will not be charged twice.');

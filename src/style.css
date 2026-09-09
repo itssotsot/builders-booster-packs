@@ -2372,7 +2372,7 @@ kbd {
 .brand-name {
   font: 750 20px/1.15 "Manrope", sans-serif;
   letter-spacing: -0.6px;
-  white-space: nowrap;
+  white-space: normal;
 }
 .brand-subtitle {
   font-size: 9px;
@@ -2380,6 +2380,10 @@ kbd {
   text-transform: uppercase;
   color: #d2becd;
   white-space: nowrap;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .header nav { position: static; transform: none; margin: 0 20px; }
+  .brand-name { font-size: 18px; }
 }
 @media (max-width: 760px) {
   .header {
@@ -2460,7 +2464,8 @@ kbd {
 .builder-preview {
   min-width: 0;
 }
-.builder-preview img {
+.builder-preview img,
+.builder-card-preview {
   aspect-ratio: 5 / 7;
   display: block;
   width: 100%;
@@ -2716,3 +2721,43 @@ kbd {
 /* Room exploration leaves controls and the card stage in their own input layer. */
 .room { touch-action: none; }
 .room-dragging, .room-dragging * { cursor: grabbing !important; user-select: none; }
+
+/* Edition selection shares one collection and pack balance. */
+.edition-picker{position:absolute;top:24px;left:32px;z-index:8;display:flex;flex-direction:column;gap:8px;width:254px;padding:15px 17px;border:1px solid #e7ddd322;border-radius:13px;background:#17171f91;backdrop-filter:blur(20px);box-shadow:0 8px 35px #07091720}
+.edition-picker label{font-size:9px;font-weight:600;letter-spacing:1.5px;color:#ccbfcf}
+.edition-picker select{font:600 13px 'DM Sans',sans-serif;line-height:1.6;color:#f4e9f2;background:transparent;border:0;outline-offset:4px;cursor:pointer;width:100%;padding:3px 18px 3px 0}
+.edition-picker option{background:#241e2b;color:#f5eaf0}
+.edition-picker select:disabled{opacity:.5;cursor:default}
+.edition-picker button{align-self:flex-start;border:0;padding:0;background:transparent;color:#c7bdd0;font:400 11px 'DM Sans',sans-serif;cursor:pointer}
+.edition-picker button:hover{color:#fff}
+body[data-pack="x-builders"] .edition-picker{border-color:#a9dfff32}
+@media(max-width:850px){.edition-picker{top:12px;left:16px;width:205px;padding:11px 13px;gap:4px}.edition-picker select{font-size:12px}.edition-picker label{font-size:8px}}
+@media(max-width:600px){.edition-picker{top:9px;left:12px;width:190px;padding:9px 11px}.edition-picker button{font-size:10px}.edition-picker label{display:none}}
+
+/* Pack-only selection display; the surrounding room and panels retain their layout. */
+.pack-options { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.pack-option { position: absolute; transform: translateX(-50%); text-align: center; pointer-events: auto; }
+.pack-option-select { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 5px; padding: 0; }
+.pack-option-name { font: 650 17px/1.2 'Manrope', sans-serif; color: #f5edf2; }
+.pack-option-meta { font: 400 11px/1.4 'DM Sans', sans-serif; color: #cebdcf; }
+.pack-option-roster { padding: 5px 0; color: #a9ddeb; font-size: 11px; }
+.pack-option-roster:hover { text-decoration: underline; }
+.room:has(#inspection) .pack-options { display: none; }
+@media(max-width:600px) {
+  .pack-option-name { font-size: 12px; }
+  .pack-option-meta { font-size: 9px; }
+  .pack-option-select { gap: 3px; }
+  .pack-option-roster { font-size: 10px; }
+}
+.pack-option-name, .pack-option-meta, .pack-option-roster { text-shadow: 0 2px 10px #09050ecc; }
+
+/* Expand only the pack carousel; revealed cards keep their original stage. */
+.three-stage.pack-carousel { left: 0; width: 100%; max-width: none; transform: none; }
+
+.x-wordmark { display: inline-flex; align-items: center; gap: .35em; vertical-align: middle; }
+.x-wordmark > svg { width: .95em; height: .9714em; flex: none; }
+
+.builder-card-preview { aspect-ratio: 5 / 7; background: #182421; }
+
+.collection-pack-tabs { margin-top: 24px; }
+.collection-pack-tabs .filter { display: inline-flex; align-items: center; font-size: 13px; padding: 10px 18px; }
