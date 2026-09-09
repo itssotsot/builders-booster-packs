@@ -1,4 +1,6 @@
 import "./style.css";
+import packBrandMark from "./assets/pack-logo.svg?raw";
+import packBrandURL from "./assets/pack-logo.svg?url";
 import openaiBrandMark from "./assets/booster-pack-logo.svg?raw";
 import xBrandMark from "./assets/x-builders-logo.svg?raw";
 import xBrandURL from "./assets/x-builders-logo.svg?url";
@@ -64,12 +66,12 @@ const icons = {
 const $ = (s) => document.querySelector(s);
 const sound = new Sound();
 let edition = getPack(new URLSearchParams(location.search).get("pack")) || getPack();
-let brandMark = edition.id === "openai" ? openaiBrandMark : xBrandMark;
-const editionTitle = edition.id === "openai" ? "OpenAI Booster Packs" : "X Builders Booster Packs";
+let brandMark = packBrandMark;
+const editionTitle = "Builders Booster Packs";
 document.title = `${editionTitle} Collector Simulator`;
 document.body.dataset.pack = edition.id;
 function updateFavicon(id) {
-  document.querySelector('link[rel="icon"]').href = id === 'x-builders' ? xBrandURL : openaiBrandURL;
+  document.querySelector('link[rel="icon"]').href = packBrandURL;
 }
 updateFavicon(edition.id);
 function packWordmark(pack, uppercase = false) {
@@ -132,10 +134,10 @@ function selectEdition(id) {
   scene.textures = textures;
   scene.selectPack(id);
   $("#pack-options").hidden = true;
-  const mark = id === 'openai' ? openaiBrandMark : xBrandMark;
+  const mark = packBrandMark;
   brandMark = mark;
   updateFavicon(id);
-  const title = id === 'openai' ? 'OpenAI Booster Packs' : 'X Builders Booster Packs';
+  const title = "Builders Booster Packs";
   document.title = `${title} Collector Simulator`;
   document.body.dataset.pack = id;
   $('.brand').innerHTML = `${mark}<span class="brand-lockup"><span class="brand-name">${title}</span><span class="brand-subtitle">Collector Simulator</span></span>`;
