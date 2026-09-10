@@ -240,6 +240,7 @@ export class PackScene {
     this.mode = locked ? "locked" : "sealed";
     this.drag = null;
     this.progress = 0;
+    this.pendingTear = false;
     this.tearDirection = 0;
     this.rotation = { x: 0, y: 0 };
     this.flip = 0;
@@ -405,7 +406,7 @@ export class PackScene {
             return;
           }
         }
-        if (this.cb.canTear?.() === false || !this.isNearSeal(e)) return;
+        if (!this.isNearSeal(e)) return;
         this.drag = {
           type: "tear",
           x: e.clientX,
@@ -461,10 +462,7 @@ export class PackScene {
         }
         const distance = clamp(this.screenPackWidth() * 0.5, 100, 220);
         const delta = dx * this.drag.dir;
-        this.progress = Math.max(
-          this.progress,
-          clamp(this.drag.start + delta / distance, 0, 1),
-        );
+        this.setTearProgress(Math.max(this.progress, clamp(this.drag.start + delta / distance, 0, 1)));
         const speed = Math.min(Math.abs(e.clientX - this.drag.last) / 18, 1);
         this.drag.last = e.clientX;
         this.sound.crinkle(speed);
@@ -635,7 +633,6 @@ export class PackScene {
       this.choosePack(this.packChoices[this.carouselTarget].userData.edition);
       return;
     }
-    if (this.cb.canTear?.() === false) return;
     this.sound.unlock();
     this.beginTear();
     this.mode = "autoTear";
@@ -644,7 +641,7 @@ export class PackScene {
     this.tween(
       this.reduced ? 0.28 : 0.95,
       (t) => {
-        this.progress = start + (1 - start) * t;
+        this.setTearProgress(start + (1 - start) * t);
         this.deform();
         this.sound.crinkle(0.65);
         this.cb.onProgress?.(this.progress);
@@ -652,8 +649,29 @@ export class PackScene {
       () => this.finishTear(),
     );
   }
+  setTearProgress(progress) {
+    if (this.cb.canCompleteTear?.() === false && progress >= .94) {
+      this.pendingTear = true;
+      this.progress = .94;
+    } else this.progress = progress;
+  }
+  resumePendingTear() {
+    if (this.pendingTear && this.mode === 'tearing') {
+      this.drag = null;
+      this.autoTear();
+    }
+  }
   finishTear() {
     if (this.mode === "opening") return;
+    if (this.cb.canCompleteTear?.() === false) {
+      this.pendingTear = true;
+      this.progress = .94;
+      this.mode = 'tearing';
+      this.deform();
+      this.cb.onProgress?.(this.progress);
+      return;
+    }
+    this.pendingTear = false;
     this.progress = 1;
     this.mode = "opening";
     this.drag = null;

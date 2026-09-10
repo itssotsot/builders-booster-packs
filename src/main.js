@@ -157,8 +157,9 @@ function selectEdition(id) {
       return;
     }
     packReady = true;
-    phase = 'sealed';
-    announce('Your pack is ready. Drag near the top to rip.');
+    if (phase === 'preparing') phase = 'sealed';
+    scene.resumePendingTear();
+    announce('Your pack is ready.');
   });
 }
 document.querySelectorAll('[data-pack-select]').forEach(button => button.onclick = () => scene?.choosePack(button.dataset.packSelect));
@@ -290,7 +291,7 @@ function toast(text) {
   );
 }
 function onTearStart() {
-  if (phase === "sealed") {
+  if (["sealed", "preparing"].includes(phase)) {
     phase = "tearing";
     $("#pack-options").hidden = true;
     $("#pack-info").hidden = true;
@@ -417,7 +418,7 @@ function action() {
     bonusPanel.querySelector('a:not([hidden]), button:not([hidden])')?.focus();
     return;
   }
-  if (phase === 'sealed' || phase === 'tearing') { scene.autoTear(); return; }
+  if (['sealed', 'preparing', 'tearing'].includes(phase)) { scene.autoTear(); return; }
   if (!['back', 'front'].includes(phase)) return;
   const revealing = phase === 'back';
   phase = revealing ? 'flipping' : 'advancing';
@@ -709,7 +710,7 @@ async function start() {
           label.style.width = `${point.width}px`;
         }
       },
-      canTear: () => packReady,
+      canCompleteTear: () => packReady,
       onTearStart,
       onProgress: (p) => ($("#tear-meter span").style.width = `${p * 100}%`),
       onOpen,
@@ -719,7 +720,7 @@ async function start() {
       onComplete,
       onFrame: (point) => {
         const hint = $("#seal-hint");
-        hint.querySelector("span:nth-child(2)").textContent = phase === "preparing" ? "PREPARING YOUR PACK…" : point.confirmed ? "DRAG NEAR THE TOP TO RIP" : "CLICK THE PACK TO CHOOSE";
+        hint.querySelector("span:nth-child(2)").textContent = phase === "preparing" ? "DRAG TO RIP · LOADING CARDS…" : point.confirmed ? "DRAG NEAR THE TOP TO RIP" : "CLICK THE PACK TO CHOOSE";
         hint.style.left = `${point.x}px`;
         hint.style.top = `${point.y}px`;
       },

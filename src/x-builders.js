@@ -647,5 +647,20 @@ export const X_BUILDERS = [
     "source": "https://x.com/Ananth7e",
     "pack": "x-builders",
     "portrait": "x-builders/ananth7e.jpg"
-  }
+  },
+{
+  "name": "Rijn",
+  "fullName": "Rijn Hartman",
+  "handle": "RijnHartman",
+  "specialty": "AI products",
+  "color": "#9fdcff",
+  "hp": 180,
+  "power": 110,
+  "attack": "Launch jump",
+  "text": "Leap from prototype to product. Share what works, fix what breaks, and keep the costs in bounds.",
+  "bio": "Builds AI products and software businesses, sharing what works, what breaks, and what it costs. Former college basketball player and high jumper.",
+  "source": "https://x.com/RijnHartman",
+  "pack": "x-builders",
+  "portrait": "x-builders/rijnhartman.jpg"
+}
 ];

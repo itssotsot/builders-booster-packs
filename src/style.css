@@ -322,6 +322,11 @@ h1 > span,
   z-index: 2;
   touch-action: none;
 }
+/* The focusable stage receives card keyboard controls; its viewport is not a card border. */
+.three-stage:focus,
+.three-stage:focus-visible {
+  outline: none;
+}
 .three-stage canvas {
   display: block;
   width: 100%;

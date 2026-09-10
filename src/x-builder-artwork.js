@@ -147,5 +147,13 @@ export const X_PORTRAIT_SHEETS = [
     ],
     "columns": 1,
     "rows": 1
-  }
+  },
+{
+  "file": "x-builders-illustrated/rijnhartman.jpg",
+  "people": [
+    75
+  ],
+  "columns": 1,
+  "rows": 1
+}
 ];

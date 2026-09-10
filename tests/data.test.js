@@ -67,7 +67,7 @@ test("save validation rejects invalid variants, quantities and pack counts", () 
         "0-0": 2,
         "8-3": 1,
         "29-3": 1,
-        "75-0": 1,
+        "76-0": 1,
         "1-4": 3,
         "1-1": -2,
         "2-1": 1.5,
@@ -85,12 +85,12 @@ test("expansion preserves the original nine card identities and old saves", () =
   const originalHandles = ["thsottiaux", "sama", "Dimillian", "gdb", "polynoamial", "romainhuet", "embirico", "nickaturley", "michpokrass"];
   assert.deepEqual(BUILDERS.slice(0, 9).map((b) => b.handle), originalHandles);
   assert.equal(OPENAI_BUILDERS.length, 32);
-  assert.equal(BUILDERS.length, 75);
-  assert.equal(COLLECTION_SIZE, 292);
+  assert.equal(BUILDERS.length, 76);
+  assert.equal(COLLECTION_SIZE, 296);
   assert.equal(BUILDERS[29].handle, "ajambrosino");
   assert.equal(BUILDERS[30].handle, "charliermarsh");
   assert.equal(BUILDERS[31].handle, "victornunez");
-  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 74);
+  assert.equal(new Set(BUILDERS.map((b) => b.handle.toLowerCase())).size, 75);
   const oldSave = { cards: Object.fromEntries(originalHandles.map((_, person) => [`${person}-3`, person + 1])), packs: 17 };
   assert.deepEqual(cleanSave(oldSave), { ...oldSave, packAccess: cleanPackAccess() });
 });
@@ -115,13 +115,13 @@ test("every builder maps to an existing portrait cell, with distinct illustrated
     }
   }
   assert.deepEqual(cleanSave({cards:{"2-3":1,"73-3":2,"74-0":1}}).cards, {"2-3":1,"73-3":2,"74-0":1});
-  for (const invalid of [-1, 75, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
+  for (const invalid of [-1, 76, 0.5, NaN]) assert.throws(() => portraitLocation(invalid), RangeError);
 });
 
-test('the X Builders roster matches the 41 active selected accounts exactly', () => {
-  const selected = 'levelsio mattpocockuk theo adamlyttleapps LLMJunky twannl dhh DonnyWals fireship_dev FlorinPop17 realGeorgeHotz ID_AA_Carmack johnsundell thekitze marclou MengTo neetcode1 twostraws rudrank seanallen_dev ThePrimeagen v_pradeilles weswinder itshanrw alexcooldev ios_dev_alb PirateSoftware Angaisb_ an21m daveschatz emanueledpt yacineMTB LexnLin krzyzanowskim marvinvonhagen mntruell mikeyk nikitabier iruletheworldmo argofowl Ananth7e'.toLowerCase().split(' ').sort();
+test('the X Builders roster matches the 42 active selected accounts exactly', () => {
+  const selected = 'levelsio mattpocockuk theo adamlyttleapps LLMJunky twannl dhh DonnyWals fireship_dev FlorinPop17 realGeorgeHotz ID_AA_Carmack johnsundell thekitze marclou MengTo neetcode1 twostraws rudrank seanallen_dev ThePrimeagen v_pradeilles weswinder itshanrw alexcooldev ios_dev_alb PirateSoftware Angaisb_ an21m daveschatz emanueledpt yacineMTB LexnLin krzyzanowskim marvinvonhagen mntruell mikeyk nikitabier iruletheworldmo argofowl Ananth7e RijnHartman'.toLowerCase().split(' ').sort();
   const pool = getPack('x-builders');
-  assert.equal(pool.count, 41);
+  assert.equal(pool.count, 42);
   assert.equal(pool.people.includes(73), false);
   assert.equal(getPack("openai").people.includes(2), true);
   assert.equal(pool.start, 32);
