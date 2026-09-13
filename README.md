@@ -1,67 +1,97 @@
-# OpenAI Booster Packs Collector Simulator
+# Builders Booster Packs
 
-A Three.js collectible-card experience, now featuring Series 001 of the OpenAI Builders fan edition. Drag across a foil seal, peel open a pack, and discover five illustrated builders one at a time. Cards have physical thickness, rounded corners, a printed back, and interactive tilt. Reverse holographic, holographic, and gold finishes use a view-dependent shader.
+A Three.js collectible-card experience with **OpenAI Builders** and **X Builders**
+pack editions. Tear a foil wrapper, reveal five illustrated builders, and collect
+standard, reverse holographic, holographic, and gold cards in a rainy, cozy 3D room.
 
-## After-hours room
+This is an unofficial fan project. Card abilities and stats are fictional.
+See [asset provenance and licensing](ASSETS.md).
 
-The full background is a Three.js room with walnut furniture, a sofa and cushions, plants, a record player, shelves, warm pendant lights, lilac and cyan neon tubes, and fairy lights. A procedural window shader shows a rainy city at night. The foreground desk includes a mug with subtle steam, a playmat, and spare cards. Room geometry receives colored light and static shadows, with drag-to-explore camera movement that eases back on release.
+## Run locally
 
-The upper-right shelf displays an extruded OpenAI Blossom ornament, built from the official SVG. Source details are in [OPENAI-LOGO.md](src/assets/OPENAI-LOGO.md).
-
-The room and the interactive cards share one WebGL renderer. Separate camera passes keep the original card controls aligned while filling the entire browser with the room. Rain, steam, and parallax honor reduced-motion preferences.
-
-## Run
+Requires Node.js **22.13 or newer** (Node.js 24 is recommended).
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-Open [the pack room](http://localhost:5198). `npm run build` creates a production build in `dist/`; `npm run preview` serves it. `npm test` checks pack generation, anonymous sessions, collection persistence, and concurrent requests. Local development requires Node.js 22.13 or newer and saves to the ignored `.data/collections.sqlite` file.
+Open http://localhost:5198. No credentials or hosting account are needed locally.
+The API stores anonymous collections in the ignored `.data/collections.sqlite`.
 
-The app uses a single root page at `/`, with ordinary random packs. Packs are generated on the server; query parameters do not force particular pulls.
+```sh
+npm test        # Pack generation, API, persistence, and concurrency tests
+npm run build   # Client in dist/client and Worker in dist/server/index.js
+npm run preview # Preview with the local SQLite API
+npm run check   # Tests followed by a production build
+```
 
-## The experience
+## Play
 
-- Drag the room background to explore slightly left, right, up, or down; release to return to the original view. Pack and card gestures take priority.
-- Grab anywhere near the top of the pack and drag either way. A padded grab area and shorter pull make the seal easy to catch. Partial tears remain open so you can release and resume. The detached strip curls away before both sides of the wrapper fall away.
-- The sealed pack keeps only its top tear hint; card-progress dots appear once the wrapper opens.
-- Tap a face-down card to reveal it, then drag to tilt it. Release to let it settle. Tap the revealed card when ready for the next; tapping the final card shows your pulls.
-- Open **Collection** to filter by finish and inspect any revealed card. The inspection view also offers **Flip card**.
-- **Enter / Space** open, reveal, and advance. **Arrow keys** tilt. **M** toggles sound. **Escape** closes dialogs or inspection.
-- Sound is synthesized with Web Audio after a user gesture: foil crackles respond to dragging, cards swish, and rare reveals play a layered chime. No external audio assets are required.
-- Reduced-motion system preferences shorten the transitions and disable ambient motion and reveal particles. Mouse, touch, and pen share pointer-event handling.
+- Choose an edition, drag across the foil seal, and tap each card to reveal it.
+- Drag a revealed card to tilt it; tap again to advance.
+- Open Collection to filter finishes, inspect cards, and flip them over.
+- Use Enter / Space to open and advance, arrow keys to tilt, M for sound,
+  and Escape to close dialogs.
+- Drag the room background to look around. Reduced-motion preferences shorten
+  transitions and disable ambient motion and reveal particles.
 
-## Cards and odds
+Each anonymous player receives three starter packs. The creator-profile button
+starts a five-second timer and grants 1,000 extra packs once per player. It does
+not verify a follow or authenticate with X. The profile URL and timing settings
+are in `src/pack-access.js`; update the creator URL for your fork.
 
-Each anonymous player starts with **three free packs**. After the third pack, **Follow me on X** opens [@itssotsot](https://x.com/itssotsot) in another tab and starts a **five-second** spinner. The app then grants **1,000 extra packs once per anonymous player**, whether or not the visitor follows. Existing followers use the same button. This is a timed thank-you gift; it does not call X's API, authenticate users, or verify follows.
+Each pack contains five different people. The first four slots use 64% standard,
+25% reverse holo, 10% holographic, and 1% gold odds; the fifth uses 99%
+holographic and 1% gold odds. Both editions share the player's allowance.
 
-The server saves the balance, timer deadline, and collection. An opaque HttpOnly cookie identifies the player automatically: there is no sign-in or recovery code. Returning in the same browser restores the collection and allowance. Clearing the cookie or using another browser creates a separate player and loses access to the previous save. The bonus does not prove a follow or prevent someone creating another anonymous player. `src/pack-access.js` contains the creator URL, allowance, and timer configuration.
+## Persistence
 
-The browser uses an HttpOnly cookie to identify the player. There is no browser-storage collection import or migration flag. New sessions always start with an empty collection and three packs; existing sessions load their database records.
+The server generates packs, deducts the allowance, and saves all five cards in
+one transaction. Request receipts make retries safe. Reloading preserves the
+collection but does not resume the reveal sequence.
 
-32 publicly sourced OpenAI people, four finishes, and 128 collectible variants. Each five-card pack has five different people. Cards 1–4 have a 64% standard / 25% reverse holo / 10% holographic / 1% gold rare distribution. The last card is 99% holographic / 1% gold rare.
+An opaque HttpOnly, SameSite cookie identifies the player. The database stores a
+hash of the session token. Clearing the cookie or switching browsers starts a
+new player; there is no sign-in or recovery flow. No purchases or trades exist.
 
-Starting a tear requests a server-generated pack while the gesture continues. One atomic operation deducts the pack and grants all five cards immediately, including duplicates. Reveals and next-card transitions run entirely locally, with no network calls. If the server is unusually slow, the first card still waits for the pack response; subsequent reveals never wait for saving. Failed requests retry with the same receipt ID to avoid double charging.
+## Hosting
 
-Reloading does not resume a reveal sequence: all five cards are already in the collection. The migration also grants any remaining unshown cards from an old unfinished pack without adding already-revealed cards twice. This is a free collection experience with no purchases, trades, or battle system.
+Publishing this repository on GitHub does not deploy the app. **GitHub Pages
+alone is insufficient:** collections and pack opening require the Worker API
+and a database, not just static files.
 
-## Sites database
+For OpenAI Sites, copy the example and set your own project ID:
 
-`.openai/hosting.json` declares the D1 binding `DB` for the existing Sites project. The Worker API is built to `dist/server/index.js`, the client to `dist/client`, and Sites metadata and SQL migrations are included in the build. `db/schema.ts` defines the tables; run `npm run db:generate` after schema changes and review the generated migration before deployment. Do not edit already-applied migrations.
+```sh
+cp .openai/hosting.example.json .openai/hosting.json
+```
 
-Local development and preview use SQLite through the same API. The deployed Worker uses Sites D1 and stores only a hash of each secret session cookie. `users` stores anonymous IDs, dates, allowance counters, and bonus status. `card` stores one row for every owned copy, with person, finish, acquisition date, and pack/slot where known. `pack_openings` stores a request receipt for safe retries, not reveal progress. A transactional batch commits the receipt, five card rows, and pack debit together. Imported legacy cards retain the available save timestamp because their original acquisition dates were not recorded. The hosted database and migration take effect on the next Sites deployment; running a local build does not modify the live site.
+The real hosting file is ignored. With that file present, the Sites plugin adds
+hosting metadata and SQL migrations to `dist/.openai` during a build. Without
+it, the normal client and Worker build still works. Deployment uses a D1 binding
+named `DB` and an asset binding named `ASSETS` for the client. Deployment to
+another Worker host requires that host's configuration and migration setup;
+this repository does not include a one-command deployment for other hosts.
 
-## Artwork
+`db/schema.ts` defines the schema. After schema changes, run
+`npm run db:generate` and review the generated SQL. Local development applies
+migrations automatically. A local build does not deploy or modify hosted data.
 
-The new portrait strips and wrapper were generated with the built-in image generation tool using public portrait references. Exact prompts and layouts: [BUILDERS-ARTWORK.md](public/assets/BUILDERS-ARTWORK.md). Research and account sources: [BUILDERS-SOURCES.md](public/assets/BUILDERS-SOURCES.md). Card lettering, frames, and backs are canvas textures; the wrapper uses generated art on deformable Three.js geometry. The cozy 3D room remains intact.
+## Development
 
-The current wrapper replaces the bottom-right portrait with Peter Steinberger, keeping Sam, Tibo, and the existing composition. The original wrapper is retained as `builders-pack.png`; the active image is `builders-pack-peter-v2.png`. The room's left side is clear of promotional copy, and the collection bar aligns with the bottom of the window.
+- `src/`: scene, card rendering, input, roster, and browser API client.
+- `server/`: Worker API, collection transactions, and local SQLite adapter.
+- `db/` and `drizzle/`: schema and migration history.
+- `tests/`: automated tests and [historical browser QA notes](tests/QA.md).
 
-The expansion appends 21 people (including Andrew Ambrosino) while preserving the first nine card identities and existing saves. Fictional abilities and stats are marked as fan-edition game content. Old browser-storage collections are no longer read or imported.
+The renderer requires WebGL. Audio is synthesized after a user gesture; Google
+Fonts are used when available, with local fallbacks.
 
-## Verification
+The nested esbuild dependency used by Drizzle's legacy loader is overridden to
+`^0.28.2` to avoid its older vulnerable development server implementation.
 
-See [tests/QA.md](tests/QA.md) for browser checks and known verification limits. The automated suite tests 10,000 reproducible packs, rarity distributions, uniqueness, save validation, and corrupted or unavailable storage. Seeded pack generation remains available to automated tests only.
+## License
 
-The renderer uses Three.js [physical materials](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) for the wrapper and a custom GLSL finish shader for cards. The app requires a browser with WebGL and uses Google Fonts when available, with local font fallbacks.
+Original code and documentation use the [MIT license](LICENSE). Visual assets,
+reference photos, logos, and trademarks are excluded; see [ASSETS.md](ASSETS.md).

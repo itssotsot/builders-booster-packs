@@ -7,3 +7,9 @@ test-results/
 .wrangler/
 .env*
 !.env.example
+
+# Local publishing and artwork scratch files
+.openai/hosting.json
+output/
+reports/
+*-preview.html

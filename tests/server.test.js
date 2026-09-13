@@ -7,6 +7,7 @@ import { localDatabase } from '../server/local-database.js';
 import { handleApi } from '../server/worker.js';
 import { DatabaseSync } from 'node:sqlite';
 import { packsRemaining } from '../src/pack-access.js';
+import { getPack } from '../src/data.js';
 
 const origin = 'https://packs.test';
 function fixture(t) {
@@ -188,7 +189,7 @@ test('pack editions save all five cards from the selected roster and share the b
   const requestId = crypto.randomUUID();
   const x = await call(DB, 'open', {requestId, edition:'x-builders'}, a.cookie);
   assert.equal(x.status, 200);
-  assert.ok(x.data.pack.cards.every(c => c.person >= 32 && c.person < 75));
+  assert.ok(x.data.pack.cards.every(c => getPack('x-builders').people.includes(c.person)));
   assert.equal(Object.values(x.data.save.cards).reduce((a,b)=>a+b,0), 5);
   const repeated = await call(DB, 'open', {requestId, edition:'x-builders'}, a.cookie);
   assert.deepEqual(repeated.data.pack, x.data.pack);

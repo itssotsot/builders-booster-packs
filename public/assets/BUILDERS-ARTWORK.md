@@ -61,9 +61,8 @@ Exact prompt:
 Use case: stylized-concept. Asset type: production portrait atlas texture for a collectible trading card game. Create ONE SQUARE image exactly divided into a 2-column by 2-row grid of FOUR equal SQUARE panels. Input images 1–4 are the individual likeness references, in row-major order (top left, top right, bottom left, bottom right). Input image 5 is STYLE REFERENCE ONLY showing our existing card art; never include those three people in the new output. Match that polished graphic-novel gouache painting style, fine ink outlines, softly painted detailed faces, screenprinted grain, cinematic colored rim light. Every quadrant has exactly one recognizable chest-up portrait of the matching reference person. Preserve distinctive face, hair, skin tone, glasses and facial hair; flattering and expressive, not a caricature. Center each face at x50% and y35% WITHIN ITS QUADRANT. Full head visible with at least 10% top margin. Each scene extends edge-to-edge within its square, with a sharp boundary at the 50% divisions. Rich dark neon hacker-clubhouse surroundings, warm natural faces, colorful magical technology motifs that never obscure faces. NO gutters, NO borders, NO printed words, NO numbers, NO names, NO logos, NO captions, NO watermarks, NO trading card frames. Exactly four distinct portraits, no repeating people. High detail, ideally 2048x2048.
 TOP LEFT: Mark Chen, gray tee, smiling, turquoise/cyan glowing cube lattice and visual model constellations. TOP RIGHT: Jakub Pachocki, very short close-cropped hair, dark jacket and pale shirt, violet luminous mathematical geometry and deep-space arc. BOTTOM LEFT: Wojciech Zaremba, short light brown hair and faint stubble, burgundy hoodie and navy tee, copper/amber protective light dome with tree-like branching circuits. BOTTOM RIGHT: Peter Welinder, light brown hair and stubble, brown hoodie, ice-blue sculptural device prototypes and hovering interface orbs.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-04.png`
+Saved asset: `public/assets/builders-04.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-3b4a7f74-05a6-4884-9327-e018948f6991.png`
 
 ### builders-05.png
 
@@ -74,9 +73,8 @@ Exact prompt:
 Use case: stylized-concept. Asset type: production portrait atlas texture for a collectible trading card game. Create ONE SQUARE image exactly divided into a 2-column by 2-row grid of FOUR equal SQUARE panels. Input images 1–4 are the individual likeness references, in row-major order (top left, top right, bottom left, bottom right). Input image 5 is STYLE REFERENCE ONLY showing our existing card art; never include those three people in the new output. Match that polished graphic-novel gouache painting style, fine ink outlines, softly painted detailed faces, screenprinted grain, cinematic colored rim light. Every quadrant has exactly one recognizable chest-up portrait of the matching reference person. Preserve distinctive face, hair, skin tone, glasses and facial hair; flattering and expressive, not a caricature. Center each face at x50% and y35% WITHIN ITS QUADRANT. Full head visible with at least 10% top margin. Each scene extends edge-to-edge within its square, with a sharp boundary at the 50% divisions. Rich dark neon hacker-clubhouse surroundings, warm natural faces, colorful magical technology motifs that never obscure faces. NO gutters, NO borders, NO printed words, NO numbers, NO names, NO logos, NO captions, NO watermarks, NO trading card frames. Exactly four distinct portraits, no repeating people. High detail, ideally 2048x2048.
 TOP LEFT: Josh Achiam, dark short hair and stubble, dark blazer and white shirt, royal indigo luminous compass and star-map. TOP RIGHT: Aidan McLaughlin, distinctive dark medium-length center-parted hair, dark tee, magenta/lime glowing model-tuning sliders and waveform. BOTTOM LEFT: Isa Fulford, long dark hair, dark navy textured collared jacket, emerald/gold floating research pages and lens shapes. BOTTOM RIGHT: Steven Heidel, short light brown hair, smiling, black tee, electric blue and turquoise connected API portal paths.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-05.png`
+Saved asset: `public/assets/builders-05.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-fb0c44d9-79d7-47da-895e-797ba628b66f.png`
 
 ### builders-06.png
 
@@ -87,9 +85,8 @@ Exact prompt:
 Use case: stylized-concept. Asset type: production portrait atlas texture for a collectible trading card game. Create ONE SQUARE image exactly divided into a 2-column by 2-row grid of FOUR equal SQUARE panels. Input images 1–4 are the individual likeness references, in row-major order (top left, top right, bottom left, bottom right). Input image 5 is STYLE REFERENCE ONLY showing our existing card art; never include those three people in the new output. Match that polished graphic-novel gouache painting style, fine ink outlines, softly painted detailed faces, screenprinted grain, cinematic colored rim light. Every quadrant has exactly one recognizable chest-up portrait of the matching reference person. Preserve distinctive face, hair, skin tone, glasses and facial hair; flattering and expressive, not a caricature. Center each face at x50% and y35% WITHIN ITS QUADRANT. Full head visible with at least 10% top margin. Each scene extends edge-to-edge within its square, with a sharp boundary at the 50% divisions. Rich dark neon hacker-clubhouse surroundings, warm natural faces, colorful magical technology motifs that never obscure faces. NO gutters, NO borders, NO printed words, NO numbers, NO names, NO logos, NO captions, NO watermarks, NO trading card frames. Exactly four distinct portraits, no repeating people. High detail, ideally 2048x2048.
 TOP LEFT: Peter Steinberger, short dark hair, rectangular glasses and neat short beard, dark shirt, coral/copper glowing lobster-shaped constellation and tiny agent orbs. TOP RIGHT: Vaibhav (VB) Srivastav, high dark hair, dark rectangular glasses and light goatee, burgundy sweatshirt, purple/gold friendly community constellation and floating code panels. BOTTOM LEFT: Dominik Kundel, short dark swept hair, full beard, dark overshirt and dark tee, mint/orange interlocking developer-tool blocks and branching panels. BOTTOM RIGHT: Hyung Won Chung, swept-up black hair and round thin metal glasses, pale blue collared shirt, azure/gold reasoning paths and small luminous chess-like geometric pieces.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-06.png`
+Saved asset: `public/assets/builders-06.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-c0d445da-3c45-4baa-9afa-eebd0cf2e6b0.png`
 
 ### builders-07.png
 
@@ -100,9 +97,8 @@ Exact prompt:
 Use case: stylized-concept. Asset type: production portrait atlas texture for a collectible trading card game. Create ONE SQUARE image exactly divided into a 2-column by 2-row grid of FOUR equal SQUARE panels. Input images 1–4 are the individual likeness references, in row-major order (top left, top right, bottom left, bottom right). Input image 5 is STYLE REFERENCE ONLY showing our existing card art; never include those three people in the new output. Match that polished graphic-novel gouache painting style, fine ink outlines, softly painted detailed faces, screenprinted grain, cinematic colored rim light. Every quadrant has exactly one recognizable chest-up portrait of the matching reference person. Preserve distinctive face, hair, skin tone, glasses and facial hair; flattering and expressive, not a caricature. Center each face at x50% and y35% WITHIN ITS QUADRANT. Full head visible with at least 10% top margin. Each scene extends edge-to-edge within its square, with a sharp boundary at the 50% divisions. Rich dark neon hacker-clubhouse surroundings, warm natural faces, colorful magical technology motifs that never obscure faces. NO gutters, NO borders, NO printed words, NO numbers, NO names, NO logos, NO captions, NO watermarks, NO trading card frames. Exactly four distinct portraits, no repeating people. High detail, ideally 2048x2048.
 TOP LEFT: David Schnurr, short swept dark hair and friendly wide smile, charcoal-gray collared shirt, periwinkle/cyan precise code panels and orbital interface shapes. TOP RIGHT: Gavin Nelson, use his supplied public illustrated avatar identity: curly brown hair, round dark glasses, wide smile, blue overshirt and teal tee; polished illustrated human portrait, not photorealistic; apricot/turquoise playful cursor shapes, nested rounded UI panels and motion paths. BOTTOM LEFT: Shibani Santurkar, dark shoulder-length wavy hair, smiling, red patterned top, rose/emerald protective geometric shields and model-testing lattice. BOTTOM RIGHT: Sherwin Wu, short dark spiky hair, smiling, speckled charcoal sweater, electric cyan/violet data pathways and luminous developer platform portals.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-07.png`
+Saved asset: `public/assets/builders-07.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-be489833-cba0-4e1b-b098-22346b74a1a6.png`
 
 ### builders-08.png
 
@@ -113,9 +109,8 @@ Exact prompt:
 Use case: stylized-concept. Asset type: production portrait atlas texture for a collectible trading card game. Create ONE SQUARE image exactly divided into a 2-column by 2-row grid of FOUR equal SQUARE panels. Input images 1–4 are the individual likeness references, in row-major order (top left, top right, bottom left, bottom right). Input image 5 is STYLE REFERENCE ONLY showing our existing card art; never include those three people in the new output. Match that polished graphic-novel gouache painting style, fine ink outlines, softly painted detailed faces, screenprinted grain, cinematic colored rim light. Every quadrant has exactly one recognizable chest-up portrait of the matching reference person. Preserve distinctive face, hair, skin tone, glasses and facial hair; flattering and expressive, not a caricature. Center each face at x50% and y35% WITHIN ITS QUADRANT. Full head visible with at least 10% top margin. Each scene extends edge-to-edge within its square, with a sharp boundary at the 50% divisions. Rich dark neon hacker-clubhouse surroundings, warm natural faces, colorful magical technology motifs that never obscure faces. NO gutters, NO borders, NO printed words, NO numbers, NO names, NO logos, NO captions, NO watermarks, NO trading card frames. Exactly four distinct portraits, no repeating people. High detail, ideally 2048x2048.
 TOP LEFT: Sebastien Bubeck, light brown/gray side-swept hair, pale gray knit hoodie, warm amber/violet mathematical curves and elegant proof geometry. TOP RIGHT: Yann Dubois, wavy swept brown hair, round glasses and light stubble, beige polo shirt, lime/teal orbiting evaluation gauges and training pathways. BOTTOM LEFT: Ari Weinstein, short dark hair, gray hoodie, cobalt/coral floating desktop windows and a glowing cursor arrow, no phone or phone booth. BOTTOM RIGHT: Johannes Heidecke, tousled curly dark hair, light beard and round glasses, black-and-white textured sweater, icy teal/blue translucent safety shields and connected network nodes.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-08.png`
+Saved asset: `public/assets/builders-08.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-97c41a20-6204-4a5e-bbad-ed1b936734db.png`
 
 ### builders-09.png
 
@@ -125,17 +120,15 @@ Exact prompt:
 
 Use case: stylized-concept. Create one SQUARE full-bleed portrait illustration for an OpenAI Builders fan trading-card game. First input is Andrew Ambrosino (@ajambrosino) on a podcast cover: use ONLY his facial likeness, short dark hair swept upward, dark eyebrows, light stubble and dark charcoal shirt. Remove all podcast typography and do not copy the cover layout. Second input is STYLE REFERENCE ONLY, showing four other builders: do not include those people or make a grid. Andrew is the only person in this image. Match its premium modern graphic-novel gouache painting with fine ink detail, natural warm skin, textured paper grain and dramatic neon rim lights. Friendly, thoughtful, recognizable chest-up portrait. Midnight jade and indigo workspace with floating mint and peach desktop windows, a luminous cursor and tiny interface sparks framing his shoulders. A sense of polished creative software craftsmanship. Center face at x50% y36%; keep full hairstyle visible with 12% top margin, shoulders below, uncluttered detailed face. Everything fills the single square edge-to-edge. No borders, no text, no names, no letters, no logos, no watermark, no extra people, no split panels. Ideally 1024x1024.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-09.png`
+Saved asset: `public/assets/builders-09.png`
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-528fab84-56f8-4546-be0c-29901340232e.png`
 
 ## Wrapper portrait replacement — Peter Steinberger
 
 Generated 2026-09-08 with the built-in image generation tool. The original `builders-pack.png` was the edit target; `references/builders-expansion/steipete.jpg` supplied Peter's public portrait likeness. The requested change was to replace the bottom-right Dimillian portrait while preserving the existing composition. Sam and Tibo, the surrounding jade/copper palette and iridescent oval were visually compared with the original. This is a generative edit, not a claim of pixel-identical preservation outside the portrait.
 
-Saved asset: `/Users/sotiriskaniras/Documents/ChatGPT/cards/public/assets/builders-pack-peter-v2.png` (1024 × 1536).
+Saved asset: `public/assets/builders-pack-peter-v2.png` (1024 × 1536).
 
-Original generated file: `/Users/sotiriskaniras/.codex/generated_images/01a07da3-9b4b-7711-a083-40d0cc78ffe8/exec-645eb74c-618d-4a21-96f4-754e9c8f9413.png`
 
 The loader uses this versioned image. The previous wrapper is retained. Canvas lettering, foil geometry, crimping, and tear interaction still apply to the new artwork. The current pack is **Series 001**, with series lettering rendered by the canvas from the shared `SERIES` value; historical generation prompts below or above retain their original wording.
 

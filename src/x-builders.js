@@ -1,5 +1,5 @@
 // Append-only selected roster. Abilities and stats are fictional game flavor.
-// Copy sources: reports/x-builders-pack/copy-sources.json
+// Public profile sources are recorded in each entry below.
 export const X_BUILDERS = [
   {
     "name": "Pieter Levels",
