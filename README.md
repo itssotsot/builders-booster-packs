@@ -1,4 +1,8 @@
+[![Builders Booster Packs — OpenAI Builders and X Builders in the pack room](docs/images/builders-booster-packs.png)](https://builders-booster-packs.itssotsot.chatgpt.site)
+
 # Builders Booster Packs
+
+**[Play now →](https://builders-booster-packs.itssotsot.chatgpt.site)**
 
 A Three.js collectible-card experience with **OpenAI Builders** and **X Builders**
 pack editions. Tear a foil wrapper, reveal five illustrated builders, and collect
@@ -36,11 +40,6 @@ npm run check   # Tests followed by a production build
 - Drag the room background to look around. Reduced-motion preferences shorten
   transitions and disable ambient motion and reveal particles.
 
-Each anonymous player receives three starter packs. The creator-profile button
-starts a five-second timer and grants 1,000 extra packs once per player. It does
-not verify a follow or authenticate with X. The profile URL and timing settings
-are in `src/pack-access.js`; update the creator URL for your fork.
-
 Each pack contains five different people. The first four slots use 64% standard,
 25% reverse holo, 10% holographic, and 1% gold odds; the fifth uses 99%
 holographic and 1% gold odds. Both editions share the player's allowance.
@@ -57,22 +56,11 @@ new player; there is no sign-in or recovery flow. No purchases or trades exist.
 
 ## Hosting
 
-Publishing this repository on GitHub does not deploy the app. **GitHub Pages
-alone is insufficient:** collections and pack opening require the Worker API
-and a database, not just static files.
-
 For OpenAI Sites, copy the example and set your own project ID:
 
 ```sh
 cp .openai/hosting.example.json .openai/hosting.json
 ```
-
-The real hosting file is ignored. With that file present, the Sites plugin adds
-hosting metadata and SQL migrations to `dist/.openai` during a build. Without
-it, the normal client and Worker build still works. Deployment uses a D1 binding
-named `DB` and an asset binding named `ASSETS` for the client. Deployment to
-another Worker host requires that host's configuration and migration setup;
-this repository does not include a one-command deployment for other hosts.
 
 `db/schema.ts` defines the schema. After schema changes, run
 `npm run db:generate` and review the generated SQL. Local development applies
